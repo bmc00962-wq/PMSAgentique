@@ -13,9 +13,9 @@ const PRICING_PLANS = [
     name: 'Essai',
     priceEur: 0,
     priceMad: 0,
-    color: 'text-slate-300',
-    border: 'border-slate-500/20',
-    bg: 'bg-slate-500/10',
+    color: 'text-white/70',
+    border: 'border-white/15',
+    bg: 'bg-white/8',
     icon: Zap,
     limits: '1 prop · 1 unité · 5 rés/mois',
     popular: false,
@@ -25,9 +25,9 @@ const PRICING_PLANS = [
     name: 'Starter',
     priceEur: 25,
     priceMad: 275,
-    color: 'text-blue-400',
-    border: 'border-blue-500/20',
-    bg: 'bg-blue-500/10',
+    color: 'text-sky-300',
+    border: 'border-sky-400/25',
+    bg: 'bg-sky-400/10',
     icon: Building2,
     limits: '5 prop · 25 unités',
     popular: false,
@@ -37,9 +37,9 @@ const PRICING_PLANS = [
     name: 'Pro',
     priceEur: 55,
     priceMad: 605,
-    color: 'text-primary',
-    border: 'border-primary/40',
-    bg: 'bg-primary/10',
+    color: 'text-indigo-200',
+    border: 'border-indigo-300/40',
+    bg: 'bg-indigo-300/15',
     icon: Star,
     limits: '20 prop · 100 unités',
     popular: true,
@@ -49,9 +49,9 @@ const PRICING_PLANS = [
     name: 'Croissance',
     priceEur: 85,
     priceMad: 935,
-    color: 'text-emerald-400',
-    border: 'border-emerald-500/20',
-    bg: 'bg-emerald-500/10',
+    color: 'text-teal-300',
+    border: 'border-teal-400/25',
+    bg: 'bg-teal-400/10',
     icon: Sparkles,
     limits: '50 prop · 300 unités',
     popular: false,
@@ -61,9 +61,9 @@ const PRICING_PLANS = [
     name: 'Entreprise',
     priceEur: 150,
     priceMad: 1650,
-    color: 'text-amber-400',
-    border: 'border-amber-500/20',
-    bg: 'bg-amber-500/10',
+    color: 'text-amber-300',
+    border: 'border-amber-400/25',
+    bg: 'bg-amber-400/10',
     icon: Crown,
     limits: 'Illimité · SLA 99.9%',
     popular: false,
@@ -330,42 +330,42 @@ const Login = () => {
   return (
     <div className={cn("min-h-screen flex bg-background")} dir={rtl ? "rtl" : "ltr"}>
       {/* Left panel — branding */}
-      <div className="hidden lg:flex w-[400px] xl:w-[460px] flex-shrink-0 bg-slate-950 flex-col p-8 border-r border-slate-800/60">
+      <div className="hidden lg:flex w-[400px] xl:w-[460px] flex-shrink-0 bg-[hsl(231,50%,16%)] flex-col p-8 border-r border-white/10">
         <div className="flex items-center gap-2.5 mb-12">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Building2 className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 bg-white/15 rounded-lg flex items-center justify-center border border-white/20">
+            <Building2 className="w-4 h-4 text-white" />
           </div>
           <div>
-            <div className="text-sm font-bold text-white leading-none">PMS SaaS</div>
-            <div className="text-xs text-slate-500 leading-none mt-0.5">Agentique</div>
+            <div className="text-sm font-bold text-white/90 leading-none">PMS SaaS</div>
+            <div className="text-xs text-indigo-300/60 leading-none mt-0.5">Agentique</div>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col">
-          <h2 className="text-2xl font-bold text-white mb-1 leading-tight">{l.welcome}</h2>
-          <p className="text-slate-400 text-sm mb-6">{l.subtitle}</p>
+          <h2 className="text-2xl font-bold text-white/90 mb-1 leading-tight">{l.welcome}</h2>
+          <p className="text-indigo-200/55 text-sm mb-6">{l.subtitle}</p>
 
           {/* Features compact */}
           <div className="space-y-3 mb-8">
             {l.features.map(({ label, desc }) => (
               <div key={label} className="flex items-start gap-3">
-                <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-indigo-300/80 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-slate-200">{label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 font-mono">{desc}</p>
+                  <p className="text-sm font-medium text-white/80">{label}</p>
+                  <p className="text-xs text-indigo-300/45 mt-0.5 font-mono">{desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* ── Pricing section ── */}
-          <div className="border-t border-slate-800/60 pt-6 flex-1">
+          <div className="border-t border-white/10 pt-6 flex-1">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">{l.pricingTitle}</p>
+              <p className="text-xs font-semibold text-white/60 uppercase tracking-wider">{l.pricingTitle}</p>
               <a
                 href="/pricing"
                 target="_blank"
-                className="flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
+                className="flex items-center gap-1 text-xs text-indigo-300/60 hover:text-indigo-200 transition-colors"
               >
                 {l.pricingSeeAll} <ExternalLink className="w-3 h-3" />
               </a>
@@ -380,8 +380,8 @@ const Login = () => {
                   className={cn(
                     'text-xs px-3 py-1.5 rounded-lg font-medium transition-colors min-h-[32px]',
                     pricingCurrency === c
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-slate-500 hover:text-slate-300 bg-slate-800/60',
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/35 hover:text-white/65 bg-white/5',
                   )}
                 >
                   {c === 'eur' ? '🇪🇺 EUR' : '🇲🇦 MAD'}
@@ -401,8 +401,8 @@ const Login = () => {
                     className={cn(
                       'flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors',
                       plan.popular
-                        ? 'border-primary/40 bg-primary/5'
-                        : 'border-slate-800/60 bg-slate-900/40 hover:border-slate-700/60',
+                        ? 'border-white/25 bg-white/12'
+                        : 'border-white/8 bg-white/5 hover:border-white/18',
                     )}
                   >
                     <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0', plan.bg, plan.border)}>
@@ -410,20 +410,20 @@ const Login = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-200">{plan.name}</span>
+                        <span className="text-xs font-semibold text-white/85">{plan.name}</span>
                         {plan.popular && (
                           <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium" style={{fontSize:'10px'}}>{l.pricingPopular}</span>
                         )}
                       </div>
-                      <p className="text-slate-600" style={{fontSize:'10px'}}>{plan.limits}</p>
+                      <p className="text-white/28" style={{fontSize:'10px'}}>{plan.limits}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       {price === 0 ? (
-                        <span className="text-xs font-bold text-slate-300">{l.pricingFree}</span>
+                        <span className="text-xs font-bold text-white/65">{l.pricingFree}</span>
                       ) : (
                         <div>
                           <span className={cn('text-sm font-bold', plan.color)}>{price}</span>
-                          <span className="text-slate-600" style={{fontSize:'10px'}}>{symbol}/mo</span>
+                          <span className="text-white/30" style={{fontSize:'10px'}}>{symbol}/mo</span>
                         </div>
                       )}
                     </div>
@@ -432,11 +432,11 @@ const Login = () => {
               })}
             </div>
 
-            <p className="text-slate-700 mt-3" style={{fontSize:'10px'}}>{l.pricingNote}</p>
+            <p className="text-white/22 mt-3" style={{fontSize:'10px'}}>{l.pricingNote}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-700 pt-4 border-t border-slate-800/40">
+        <div className="flex items-center gap-3 text-xs text-white/22 pt-4 border-t border-white/8">
           <span>🇨🇦 Canada</span>
           <span>·</span>
           <span>🇲🇦 Maroc</span>
@@ -594,8 +594,9 @@ const Login = () => {
               ) : (
                 /* Step 2: OTP + password */
                 <>
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3">
-                    <p className="text-xs text-blue-300">{l.otpHint}</p>
+          {/* OTP hint */}
+                  <div className="bg-indigo-50 border border-indigo-200/60 rounded-xl px-4 py-3">
+                    <p className="text-xs text-indigo-600">{l.otpHint}</p>
                   </div>
 
                   {/* OTP code */}
@@ -665,16 +666,16 @@ const Login = () => {
           </div>
 
           {/* New account info */}
-          <div className="mt-4 bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-blue-400">🏢 {l.howItWorksTitle}</p>
+          <div className="mt-4 bg-indigo-50 border border-indigo-200/60 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-indigo-600">🏢 {l.howItWorksTitle}</p>
             <div className="space-y-2">
               {l.howItWorksSteps.map((step, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <span className="w-4 h-4 bg-blue-500/20 text-blue-300 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="w-4 h-4 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
                   {i === 2 ? (
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                    <p className="text-xs text-foreground leading-relaxed">
                       {step.split('tenant_admin')[0]}
-                      <span className="font-mono text-primary bg-primary/10 px-1 rounded">tenant_admin</span>
+                      <span className="font-mono text-indigo-600 bg-indigo-50 px-1 rounded border border-indigo-200/50">tenant_admin</span>
                       {step.split('tenant_admin')[1]}
                     </p>
                   ) : (
@@ -683,22 +684,22 @@ const Login = () => {
                 </div>
               ))}
             </div>
-            <div className="pt-1 border-t border-blue-500/15">
-              <p className="text-xs text-muted-foreground/70">{l.howItWorksFooter}</p>
+            <div className="pt-1 border-t border-indigo-200/40">
+              <p className="text-xs text-muted-foreground/80">{l.howItWorksFooter}</p>
             </div>
           </div>
 
           {/* Roles info */}
-          <div className="mt-3 bg-secondary/40 border border-border rounded-xl p-3 space-y-2">
+          <div className="mt-3 bg-white border border-border rounded-xl p-3 space-y-2 shadow-sm">
             <p className="text-xs font-semibold text-foreground">🎭 {l.rolesTitle}</p>
             <div className="grid grid-cols-2 gap-1.5">
               {[
-                { idx: 0, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
-                { idx: 1, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-                { idx: 2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-                { idx: 3, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
-                { idx: 4, color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-                { idx: 5, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+                { idx: 0, color: 'text-violet-700 bg-violet-50 border-violet-200' },
+                { idx: 1, color: 'text-blue-700 bg-blue-50 border-blue-200' },
+                { idx: 2, color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                { idx: 3, color: 'text-slate-600 bg-slate-50 border-slate-200' },
+                { idx: 4, color: 'text-orange-700 bg-orange-50 border-orange-200' },
+                { idx: 5, color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
               ].map(({ idx, color }) => (
                 <div key={idx} className={`flex items-center px-2 py-1.5 rounded-lg border text-xs font-medium ${color}`}>
                   {l.roleLabels[idx]}
@@ -709,12 +710,12 @@ const Login = () => {
           </div>
 
           {/* Platform admin hint */}
-          <div className="mt-3 bg-rose-500/5 border border-rose-500/20 rounded-xl p-3 space-y-1">
-            <p className="text-xs font-semibold text-rose-400">🔐 {l.superAdminTitle}</p>
+          <div className="mt-3 bg-rose-50 border border-rose-200/60 rounded-xl p-3 space-y-1">
+            <p className="text-xs font-semibold text-rose-600">🔐 {l.superAdminTitle}</p>
             <p className="text-xs text-muted-foreground">
               {l.superAdminDesc}
             </p>
-            <div className="font-mono text-xs text-muted-foreground/40">
+            <div className="font-mono text-xs text-muted-foreground/50">
               <div>Rôle : platform_super_admin (non transférable)</div>
             </div>
           </div>
