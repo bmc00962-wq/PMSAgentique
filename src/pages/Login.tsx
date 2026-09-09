@@ -1,10 +1,74 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Mail, Lock, ArrowRight, Globe, KeyRound, Loader2, UserPlus } from "lucide-react";
+import { Building2, Mail, Lock, ArrowRight, Globe, KeyRound, Loader2, UserPlus, CheckCircle2, Zap, Star, Sparkles, Crown, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { SUPPORTED_LANGUAGES, isRTL, type Language } from "@/lib/i18n";
+
+// ── Static Pricing (synced with DB) ──────────────────────────────────────────
+const PRICING_PLANS = [
+  {
+    id: 'trial',
+    name: 'Essai',
+    priceEur: 0,
+    priceMad: 0,
+    color: 'text-slate-300',
+    border: 'border-slate-500/20',
+    bg: 'bg-slate-500/10',
+    icon: Zap,
+    limits: '1 prop · 1 unité · 5 rés/mois',
+    popular: false,
+  },
+  {
+    id: 'starter',
+    name: 'Starter',
+    priceEur: 25,
+    priceMad: 275,
+    color: 'text-blue-400',
+    border: 'border-blue-500/20',
+    bg: 'bg-blue-500/10',
+    icon: Building2,
+    limits: '5 prop · 25 unités',
+    popular: false,
+  },
+  {
+    id: 'professional',
+    name: 'Pro',
+    priceEur: 55,
+    priceMad: 605,
+    color: 'text-primary',
+    border: 'border-primary/40',
+    bg: 'bg-primary/10',
+    icon: Star,
+    limits: '20 prop · 100 unités',
+    popular: true,
+  },
+  {
+    id: 'growth',
+    name: 'Croissance',
+    priceEur: 85,
+    priceMad: 935,
+    color: 'text-emerald-400',
+    border: 'border-emerald-500/20',
+    bg: 'bg-emerald-500/10',
+    icon: Sparkles,
+    limits: '50 prop · 300 unités',
+    popular: false,
+  },
+  {
+    id: 'enterprise',
+    name: 'Entreprise',
+    priceEur: 150,
+    priceMad: 1650,
+    color: 'text-amber-400',
+    border: 'border-amber-500/20',
+    bg: 'bg-amber-500/10',
+    icon: Crown,
+    limits: 'Illimité · SLA 99.9%',
+    popular: false,
+  },
+];
 
 // ── Translations ──────────────────────────────────────────────────────────────
 
@@ -32,6 +96,23 @@ const LABELS = {
       { label: "Canaux OTA intégrés", desc: "Airbnb · Booking.com · Vrbo · iCal" },
       { label: "Finance & rapports", desc: "Relevés propriétaires · Grand livre · Virements" },
     ],
+    pricingTitle: "Tarification",
+    pricingSeeAll: "Tout voir",
+    pricingNote: "* 1 EUR ≈ 11 MAD · Prix HT · Annuel -17%",
+    pricingFree: "Gratuit",
+    pricingPopular: "Populaire",
+    howItWorksTitle: "Comment fonctionne l'inscription ?",
+    howItWorksSteps: [
+      "Entrez votre e-mail et envoyez le code OTP (4 chiffres)",
+      "Vérifiez votre boîte mail et saisissez le code",
+      "Un tenant isolé est créé automatiquement avec le rôle tenant_admin",
+    ],
+    howItWorksFooter: "Vos données sont isolées via RLS + multitenancy — aucun accès croisé entre comptes.",
+    rolesTitle: "Rôles disponibles dans la plateforme",
+    rolesFooter: "Rôles assignés par l'admin tenant. Tout nouveau compte = tenant_admin.",
+    superAdminTitle: "Accès super admin SaaS (réservé)",
+    superAdminDesc: "Réservé exclusivement au gestionnaire de la plateforme.",
+    roleLabels: ["Admin Tenant", "Gestionnaire", "Comptable", "Agent Ménage", "Technicien", "Chauffeur"],
   },
   en: {
     welcome: "Welcome back",
@@ -56,6 +137,23 @@ const LABELS = {
       { label: "Integrated OTA channels", desc: "Airbnb · Booking.com · Vrbo · iCal" },
       { label: "Finance & reports", desc: "Owner statements · Ledger · Payouts" },
     ],
+    pricingTitle: "Pricing",
+    pricingSeeAll: "See all",
+    pricingNote: "* 1 EUR ≈ 11 MAD · Excl. tax · Annual -17%",
+    pricingFree: "Free",
+    pricingPopular: "Popular",
+    howItWorksTitle: "How does registration work?",
+    howItWorksSteps: [
+      "Enter your email and send the OTP code (4 digits)",
+      "Check your inbox and enter the code",
+      "An isolated tenant is automatically created with the tenant_admin role",
+    ],
+    howItWorksFooter: "Your data is isolated via RLS + multitenancy — no cross-account access.",
+    rolesTitle: "Available roles in the platform",
+    rolesFooter: "Roles assigned by the tenant admin. Every new account = tenant_admin.",
+    superAdminTitle: "SaaS super admin access (reserved)",
+    superAdminDesc: "Reserved exclusively for the platform manager.",
+    roleLabels: ["Tenant Admin", "Manager", "Accountant", "Cleaner", "Technician", "Driver"],
   },
   ar: {
     welcome: "مرحباً",
@@ -80,6 +178,23 @@ const LABELS = {
       { label: "قنوات OTA متكاملة", desc: "Airbnb · Booking · Vrbo" },
       { label: "المالية والتقارير", desc: "كشوفات الملاك · دفتر الأستاذ" },
     ],
+    pricingTitle: "التسعير",
+    pricingSeeAll: "عرض الكل",
+    pricingNote: "* 1 EUR ≈ 11 MAD · بدون ضريبة · سنوي -17%",
+    pricingFree: "مجاني",
+    pricingPopular: "الأكثر طلباً",
+    howItWorksTitle: "كيف يعمل التسجيل؟",
+    howItWorksSteps: [
+      "أدخل بريدك الإلكتروني وأرسل رمز OTP (4 أرقام)",
+      "تحقق من بريدك وأدخل الرمز",
+      "يتم إنشاء مساحة عمل منفصلة تلقائياً بدور tenant_admin",
+    ],
+    howItWorksFooter: "بياناتك معزولة عبر RLS + multitenancy — لا يوجد وصول مشترك بين الحسابات.",
+    rolesTitle: "الأدوار المتاحة في المنصة",
+    rolesFooter: "تُعيَّن الأدوار من قِبَل مدير المستأجر. كل حساب جديد = tenant_admin.",
+    superAdminTitle: "وصول المدير العام (محجوز)",
+    superAdminDesc: "محجوز حصراً لمدير المنصة.",
+    roleLabels: ["مدير المستأجر", "مدير العقارات", "محاسب", "عامل نظافة", "تقني", "سائق"],
   },
 };
 
@@ -114,6 +229,7 @@ const Login = () => {
 
   const l = LABELS[lang];
   const rtl = isRTL(lang);
+  const [pricingCurrency, setPricingCurrency] = useState<'eur' | 'mad'>('eur');
 
   // ── Login: email + password ───────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
@@ -225,13 +341,15 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="flex-1">
-          <h2 className="text-3xl font-bold text-white mb-2 leading-tight">{l.welcome}</h2>
-          <p className="text-slate-400 text-sm mb-10">{l.subtitle}</p>
-          <div className="space-y-5">
+        <div className="flex-1 flex flex-col">
+          <h2 className="text-2xl font-bold text-white mb-1 leading-tight">{l.welcome}</h2>
+          <p className="text-slate-400 text-sm mb-6">{l.subtitle}</p>
+
+          {/* Features compact */}
+          <div className="space-y-3 mb-8">
             {l.features.map(({ label, desc }) => (
               <div key={label} className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-slate-200">{label}</p>
                   <p className="text-xs text-slate-500 mt-0.5 font-mono">{desc}</p>
@@ -239,14 +357,91 @@ const Login = () => {
               </div>
             ))}
           </div>
+
+          {/* ── Pricing section ── */}
+          <div className="border-t border-slate-800/60 pt-6 flex-1">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">{l.pricingTitle}</p>
+              <a
+                href="/pricing"
+                target="_blank"
+                className="flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
+              >
+                {l.pricingSeeAll} <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* Currency toggle */}
+            <div className="flex gap-1 mb-4">
+              {(['eur', 'mad'] as const).map(c => (
+                <button
+                  key={c}
+                  onClick={() => setPricingCurrency(c)}
+                  className={cn(
+                    'text-xs px-3 py-1.5 rounded-lg font-medium transition-colors min-h-[32px]',
+                    pricingCurrency === c
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-slate-500 hover:text-slate-300 bg-slate-800/60',
+                  )}
+                >
+                  {c === 'eur' ? '🇪🇺 EUR' : '🇲🇦 MAD'}
+                </button>
+              ))}
+            </div>
+
+            {/* Plan cards */}
+            <div className="space-y-2">
+              {PRICING_PLANS.map(plan => {
+                const Icon = plan.icon;
+                const price = pricingCurrency === 'eur' ? plan.priceEur : plan.priceMad;
+                const symbol = pricingCurrency === 'eur' ? '€' : ' MAD';
+                return (
+                  <div
+                    key={plan.id}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors',
+                      plan.popular
+                        ? 'border-primary/40 bg-primary/5'
+                        : 'border-slate-800/60 bg-slate-900/40 hover:border-slate-700/60',
+                    )}
+                  >
+                    <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0', plan.bg, plan.border)}>
+                      <Icon className={cn('w-3.5 h-3.5', plan.color)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-slate-200">{plan.name}</span>
+                        {plan.popular && (
+                          <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium" style={{fontSize:'10px'}}>{l.pricingPopular}</span>
+                        )}
+                      </div>
+                      <p className="text-slate-600" style={{fontSize:'10px'}}>{plan.limits}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {price === 0 ? (
+                        <span className="text-xs font-bold text-slate-300">{l.pricingFree}</span>
+                      ) : (
+                        <div>
+                          <span className={cn('text-sm font-bold', plan.color)}>{price}</span>
+                          <span className="text-slate-600" style={{fontSize:'10px'}}>{symbol}/mo</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-slate-700 mt-3" style={{fontSize:'10px'}}>{l.pricingNote}</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-600">
+        <div className="flex items-center gap-3 text-xs text-slate-700 pt-4 border-t border-slate-800/40">
           <span>🇨🇦 Canada</span>
           <span>·</span>
           <span>🇲🇦 Maroc</span>
           <span>·</span>
-          <span>18 ADRs gelés</span>
+          <span>🇪🇺 Europe</span>
         </div>
       </div>
 
@@ -471,54 +666,53 @@ const Login = () => {
 
           {/* New account info */}
           <div className="mt-4 bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-blue-400">🏢 Comment fonctionne l'inscription ?</p>
+            <p className="text-xs font-semibold text-blue-400">🏢 {l.howItWorksTitle}</p>
             <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="w-4 h-4 bg-blue-500/20 text-blue-300 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
-                <p className="text-xs text-muted-foreground">Entrez votre e-mail et envoyez le code OTP (4 chiffres)</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="w-4 h-4 bg-blue-500/20 text-blue-300 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                <p className="text-xs text-muted-foreground">Vérifiez votre boîte mail et saisissez le code</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="w-4 h-4 bg-blue-500/20 text-blue-300 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Un <strong className="text-foreground">tenant isolé</strong> est créé automatiquement avec le rôle{' '}
-                  <span className="font-mono text-primary bg-primary/10 px-1 rounded">tenant_admin</span>
-                </p>
-              </div>
+              {l.howItWorksSteps.map((step, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="w-4 h-4 bg-blue-500/20 text-blue-300 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                  {i === 2 ? (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {step.split('tenant_admin')[0]}
+                      <span className="font-mono text-primary bg-primary/10 px-1 rounded">tenant_admin</span>
+                      {step.split('tenant_admin')[1]}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{step}</p>
+                  )}
+                </div>
+              ))}
             </div>
             <div className="pt-1 border-t border-blue-500/15">
-              <p className="text-xs text-muted-foreground/70">Vos données sont isolées via RLS + multitenancy — aucun accès croisé entre comptes.</p>
+              <p className="text-xs text-muted-foreground/70">{l.howItWorksFooter}</p>
             </div>
           </div>
 
           {/* Roles info */}
           <div className="mt-3 bg-secondary/40 border border-border rounded-xl p-3 space-y-2">
-            <p className="text-xs font-semibold text-foreground">🎭 Rôles disponibles dans la plateforme</p>
+            <p className="text-xs font-semibold text-foreground">🎭 {l.rolesTitle}</p>
             <div className="grid grid-cols-2 gap-1.5">
               {[
-                { label: 'Admin Tenant', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
-                { label: 'Gestionnaire', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-                { label: 'Comptable', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-                { label: 'Agent Ménage', color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
-                { label: 'Technicien', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-                { label: 'Chauffeur', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
-              ].map(({ label, color }) => (
-                <div key={label} className={`flex items-center px-2 py-1.5 rounded-lg border text-xs font-medium ${color}`}>
-                  {label}
+                { idx: 0, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+                { idx: 1, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+                { idx: 2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+                { idx: 3, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
+                { idx: 4, color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
+                { idx: 5, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+              ].map(({ idx, color }) => (
+                <div key={idx} className={`flex items-center px-2 py-1.5 rounded-lg border text-xs font-medium ${color}`}>
+                  {l.roleLabels[idx]}
                 </div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground/60">Rôles assignés par l'admin tenant. Tout nouveau compte = <span className="font-mono text-primary">tenant_admin</span>.</p>
+            <p className="text-xs text-muted-foreground/60">{l.rolesFooter}</p>
           </div>
 
           {/* Platform admin hint */}
           <div className="mt-3 bg-rose-500/5 border border-rose-500/20 rounded-xl p-3 space-y-1">
-            <p className="text-xs font-semibold text-rose-400">🔐 Accès super admin SaaS (réservé)</p>
+            <p className="text-xs font-semibold text-rose-400">🔐 {l.superAdminTitle}</p>
             <p className="text-xs text-muted-foreground">
-              Réservé exclusivement au gestionnaire de la plateforme.
+              {l.superAdminDesc}
             </p>
             <div className="font-mono text-xs text-muted-foreground/70 space-y-0.5">
               <div>E-mail : <span className="text-rose-300">m.bouatmani@outlook.com</span></div>
