@@ -714,9 +714,8 @@ const Login = () => {
             <p className="text-xs text-muted-foreground">
               {l.superAdminDesc}
             </p>
-            <div className="font-mono text-xs text-muted-foreground/70 space-y-0.5">
-              <div>E-mail : <span className="text-rose-300">m.bouatmani@outlook.com</span></div>
-              <div className="text-muted-foreground/40">Rôle : platform_super_admin (non transférable)</div>
+            <div className="font-mono text-xs text-muted-foreground/40">
+              <div>Rôle : platform_super_admin (non transférable)</div>
             </div>
           </div>
 
