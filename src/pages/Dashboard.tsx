@@ -187,20 +187,17 @@ async function fetchDashboardStats() {
 }
 
 const statusColor: Record<string, string> = {
-  confirmed:   "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
-  checked_in:  "bg-blue-500/15 text-blue-400 border-blue-500/25",
-  checked_out: "bg-slate-500/15 text-slate-400 border-slate-500/25",
-  pending:     "bg-yellow-500/15 text-yellow-400 border-yellow-500/25",
-  inquiry:     "bg-purple-500/15 text-purple-400 border-purple-500/25",
-  cancelled:   "bg-red-500/15 text-red-400 border-red-500/25",
-  no_show:     "bg-red-500/15 text-red-400 border-red-500/25",
+  confirmed:   'bg-success-soft text-success border-success-border',
+  checked_in:  'bg-info-soft text-info border-info-border',
+  checked_out: 'bg-secondary text-muted-foreground border-border',
+  pending:     'bg-warning-soft text-warning border-warning-border',
+  inquiry:     'bg-accent text-primary border-primary/20',
+  cancelled:   'bg-danger-soft text-danger border-danger-border',
+  no_show:     'bg-danger-soft text-danger border-danger-border',
 };
 
 const priorityColor: Record<string, string> = {
-  urgent: "text-red-400",
-  high:   "text-orange-400",
-  normal: "text-yellow-400",
-  low:    "text-muted-foreground",
+  urgent: 'text-danger', high: 'text-warning', normal: 'text-muted-foreground', low: 'text-muted-foreground',
 };
 
 const channelLabel: Record<string, string> = {
@@ -245,14 +242,14 @@ const Dashboard = () => {
       id: r.id, type: 'checkin' as const,
       label: `Check-in: ${r.guest_first_name} ${r.guest_last_name}`,
       sub: `Arrivée aujourd'hui · ${channelLabel[r.channel ?? ''] ?? r.channel ?? ''}`,
-      color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      color: 'text-success bg-success/10 border-success/20',
       path: `/reservations/${r.id}`,
     })),
     ...(data?.checkOutsToday ?? []).map(r => ({
       id: r.id, type: 'checkout' as const,
       label: `Check-out: ${r.guest_first_name} ${r.guest_last_name}`,
       sub: `Départ attendu aujourd'hui`,
-      color: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+      color: 'text-info bg-info/10 border-info/20',
       path: `/reservations/${r.id}`,
     })),
     ...(data?.pendingApprovals ?? []).map(a => ({
@@ -260,15 +257,15 @@ const Dashboard = () => {
       label: a.title.length > 55 ? a.title.slice(0, 55) + '…' : a.title,
       sub: `Approbation ${a.priority === 'high' || a.priority === 'urgent' ? '⚡ urgente' : 'en attente'} · ${a.scenario.replace(/_/g, ' ')}`,
       color: a.priority === 'high' || a.priority === 'urgent'
-        ? 'text-red-400 bg-red-500/10 border-red-500/20'
-        : 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+        ? 'text-danger bg-danger/10 border-danger/20'
+        : 'text-warning bg-warning/10 border-warning/20',
       path: `/approvals/${a.id}`,
     })),
     ...(data?.overdueHK ?? []).map(j => ({
       id: j.id, type: 'hk' as const,
       label: `Ménage en retard — ${j.job_type.replace(/_/g, ' ')}`,
       sub: `Prévu le ${j.scheduled_date} · ${j.priority}`,
-      color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+      color: 'text-warning bg-warning/10 border-warning/20',
       path: `/housekeeping/${j.id}`,
     })),
   ];
@@ -277,17 +274,17 @@ const Dashboard = () => {
     {
       label: "Propriétés actives", icon: Building2,
       value: String(data?.properties.length ?? 0), sub: "logements en gestion",
-      color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", path: "/properties",
+      color: 'text-primary', bg: 'bg-accent', border: 'border-border', path: '/properties',
     },
     {
       label: "Réservations actives", icon: BookOpen,
       value: String(data?.activeRes.length ?? 0), sub: `${data?.thisMonthRes.length ?? 0} ce mois`,
-      color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", path: "/reservations",
+      color: 'text-primary', bg: 'bg-accent', border: 'border-border', path: '/reservations',
     },
     {
       label: "Jobs ménage en attente", icon: Sparkles,
       value: String(data?.hkJobs.length ?? 0), sub: "pending / assignés",
-      color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", path: "/housekeeping",
+      color: 'text-primary', bg: 'bg-accent', border: 'border-border', path: '/housekeeping',
     },
     {
       label: "Revenus cumulés", icon: DollarSign,
@@ -295,15 +292,15 @@ const Dashboard = () => {
         ? `${data.monthRevenue.toLocaleString("fr-CA", { minimumFractionDigits: 2 })} $`
         : "0.00 $",
       sub: "total crédits ledger",
-      color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", path: "/finance",
+      color: 'text-primary', bg: 'bg-accent', border: 'border-border', path: '/finance',
     },
     {
       label: "Taux d'occupation (30j)", icon: TrendingUp,
       value: data?.occupancyRate !== undefined ? `${data.occupancyRate}%` : "—",
       sub: `${data?.unitCount ?? 0} unité${(data?.unitCount ?? 0) !== 1 ? 's' : ''} · 30 jours`,
-      color: (data?.occupancyRate ?? 0) >= 70 ? "text-emerald-400" : (data?.occupancyRate ?? 0) >= 40 ? "text-yellow-400" : "text-red-400",
-      bg: (data?.occupancyRate ?? 0) >= 70 ? "bg-emerald-500/10" : (data?.occupancyRate ?? 0) >= 40 ? "bg-yellow-500/10" : "bg-red-500/10",
-      border: (data?.occupancyRate ?? 0) >= 70 ? "border-emerald-500/20" : (data?.occupancyRate ?? 0) >= 40 ? "border-yellow-500/20" : "border-red-500/20",
+      color: (data?.occupancyRate ?? 0) >= 70 ? "text-success" : (data?.occupancyRate ?? 0) >= 40 ? "text-warning" : "text-danger",
+      bg: (data?.occupancyRate ?? 0) >= 70 ? "bg-success/10" : (data?.occupancyRate ?? 0) >= 40 ? "bg-warning/10" : "bg-danger/10",
+      border: (data?.occupancyRate ?? 0) >= 70 ? "border-success/20" : (data?.occupancyRate ?? 0) >= 40 ? "border-warning/20" : "border-danger/20",
       path: "/reports",
     },
   ];
@@ -320,7 +317,7 @@ const Dashboard = () => {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap rounded-2xl border border-primary/15 bg-accent/45 p-6 shadow-card">
         <div>
           <h1 className="text-xl font-semibold text-foreground">
             {greeting}, {user?.full_name?.split(" ")[0] ?? user?.username ?? "…"} 👋
@@ -331,7 +328,7 @@ const Dashboard = () => {
               : "Tableau de bord · Gestion Soleil Inc."}
           </p>
         </div>
-        <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full font-medium flex-shrink-0">
+        <span className="text-xs bg-success/10 text-success border border-success/20 px-3 py-1.5 rounded-full font-medium flex-shrink-0">
           Live · données réelles
         </span>
       </div>
@@ -365,7 +362,7 @@ const Dashboard = () => {
                 {alert.type === 'maintenance' && <Wrench   className="w-4 h-4 flex-shrink-0 mt-0.5" />}
                 <div className="min-w-0">
                   <p className="text-xs font-semibold truncate">{alert.label}</p>
-                  <p className="text-xs opacity-70 mt-0.5 truncate">{alert.sub}</p>
+                  <p className="text-xs mt-0.5 truncate">{alert.sub}</p>
                 </div>
               </button>
             ))}
@@ -379,20 +376,20 @@ const Dashboard = () => {
       )}
 
       {/* ── KPI Stats ─────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
         {stats.map(({ label, icon: Icon, value, sub, color, bg, border, path }) => (
           <button
             key={label}
             onClick={() => navigate(path)}
-            className={cn(`bg-card border rounded-xl p-4 flex items-start gap-3 text-left hover:bg-secondary/30 transition-colors`, border)}
+            className={cn('border rounded-xl p-4 flex items-start gap-3 text-left shadow-card transition-transform duration-200 hover:-translate-y-1', path === '/finance' ? 'bg-accent/45' : 'bg-card', border)}
           >
             <div className={cn('w-9 h-9 border rounded-lg flex items-center justify-center flex-shrink-0', bg, border)}>
               <Icon className={cn('w-4 h-4', color)} />
             </div>
             <div className="min-w-0">
-              <div className={cn('text-2xl font-bold leading-none', color)}>{value}</div>
+              <div className={cn('text-2xl font-bold leading-none tracking-tight', color)}>{value}</div>
               <div className="text-xs text-foreground font-medium mt-1 truncate">{label}</div>
-              <div className="text-xs text-muted-foreground/60 mt-0.5 truncate">{sub}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">{sub}</div>
             </div>
           </button>
         ))}
@@ -412,7 +409,7 @@ const Dashboard = () => {
           </div>
           {!data?.reservations?.length ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <BookOpen className="w-8 h-8 text-muted-foreground/20 mb-3" />
+              <BookOpen className="w-8 h-8 text-muted-foreground mb-3" />
               <p className="text-xs text-muted-foreground">Aucune réservation</p>
             </div>
           ) : (
@@ -430,14 +427,14 @@ const Dashboard = () => {
                     <div className="text-xs font-medium text-foreground truncate">
                       {r.guest_first_name} {r.guest_last_name}
                     </div>
-                    <div className="text-xs text-muted-foreground/60 truncate">
+                    <div className="text-xs text-muted-foreground truncate">
                       {r.check_in ? `${r.check_in} → ${r.check_out}` : "Dates à confirmer"}
                       {r.channel && ` · ${channelLabel[r.channel] ?? r.channel}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {r.total_amount > 0 && (
-                      <span className="text-xs font-mono text-emerald-400">
+                      <span className="text-xs font-mono text-success">
                         {Number(r.total_amount).toLocaleString("fr-CA", { minimumFractionDigits: 2 })} $
                       </span>
                     )}
@@ -477,11 +474,11 @@ const Dashboard = () => {
 
           {/* Pending approvals */}
           {data?.pendingApprovals && data.pendingApprovals.length > 0 && (
-            <div className="bg-card border border-orange-500/20 rounded-xl p-5">
+            <div className="bg-card border border-warning/20 rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                <h2 className="text-xs font-semibold text-warning uppercase tracking-wider flex items-center gap-2">
                   <ClipboardCheck className="w-3.5 h-3.5" /> Approbations urgentes
-                  <span className="text-xs bg-orange-500/20 border border-orange-500/30 px-1.5 py-0.5 rounded-full">
+                  <span className="text-xs bg-warning/20 border border-warning/30 px-1.5 py-0.5 rounded-full">
                     {data.pendingApprovals.length}
                   </span>
                 </h2>
@@ -497,7 +494,7 @@ const Dashboard = () => {
                     <AlertTriangle className={cn('w-3.5 h-3.5 flex-shrink-0 mt-0.5', priorityColor[a.priority])} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-foreground truncate">{a.title}</p>
-                      <p className="text-xs text-muted-foreground/60">
+                      <p className="text-xs text-muted-foreground">
                         {a.deadline ? `Délai: ${new Date(a.deadline).toLocaleDateString('fr-CA')}` : 'Aucun délai'}
                       </p>
                     </div>
@@ -516,7 +513,7 @@ const Dashboard = () => {
               <button onClick={() => navigate("/housekeeping")} className="text-xs text-primary hover:underline">Voir tout</button>
             </div>
             {!data?.hkJobs?.length ? (
-              <p className="text-xs text-muted-foreground/60 py-3 text-center">Aucun job en attente</p>
+              <p className="text-xs text-muted-foreground py-3 text-center">Aucun job en attente</p>
             ) : (
               <div className="space-y-2">
                 {data.hkJobs.map(job => {
@@ -524,13 +521,13 @@ const Dashboard = () => {
                   return (
                     <div key={job.id} className={cn('flex items-center gap-2 text-xs', isOverdue && 'opacity-90')}>
                       <CheckCircle2 className={cn('w-3.5 h-3.5 flex-shrink-0',
-                        job.status === "done" ? "text-emerald-400" : job.status === "in_progress" ? "text-blue-400" : "text-muted-foreground/40")} />
+                        job.status === "done" ? "text-success" : job.status === "in_progress" ? "text-info" : "text-muted-foreground")} />
                       <div className="flex-1 min-w-0">
-                        <div className={cn('text-foreground font-medium truncate', isOverdue && 'text-red-400')}>
+                        <div className={cn('text-foreground font-medium truncate', isOverdue && 'text-danger')}>
                           {job.job_type.replace(/_/g, " ")}
                           {isOverdue && ' ⚠'}
                         </div>
-                        <div className="text-muted-foreground/60">{job.scheduled_date}</div>
+                        <div className="text-muted-foreground">{job.scheduled_date}</div>
                       </div>
                       <span className={cn('flex-shrink-0 font-medium', priorityColor[job.priority])}>{job.priority}</span>
                     </div>
@@ -542,9 +539,9 @@ const Dashboard = () => {
 
           {/* Maintenance tickets */}
           {data?.tickets && data.tickets.length > 0 && (
-            <div className="bg-card border border-amber-500/20 rounded-xl p-5">
+            <div className="bg-card border border-warning/20 rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <h2 className="text-xs font-semibold text-warning uppercase tracking-wider flex items-center gap-2">
                   <Wrench className="w-3.5 h-3.5" /> Maintenance ouverte
                 </h2>
                 <button onClick={() => navigate("/maintenance")} className="text-xs text-primary hover:underline">Voir tout</button>
@@ -555,7 +552,7 @@ const Dashboard = () => {
                     className="w-full flex items-center gap-2 text-xs text-left p-1.5 hover:bg-secondary/50 rounded-lg transition-colors">
                     <AlertTriangle className={cn('w-3.5 h-3.5 flex-shrink-0', priorityColor[t.priority])} />
                     <span className="flex-1 text-foreground truncate">{t.title}</span>
-                    <span className="text-muted-foreground/60 flex-shrink-0">{t.status}</span>
+                    <span className="text-muted-foreground flex-shrink-0">{t.status}</span>
                   </button>
                 ))}
               </div>
@@ -578,13 +575,13 @@ const Dashboard = () => {
                   return (
                     <button key={trip.id} onClick={() => navigate(`/transport/${trip.id}`)}
                       className="w-full flex items-center gap-2 text-xs text-left p-1.5 hover:bg-secondary/50 rounded-lg transition-colors">
-                      <Car className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+                      <Car className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="text-foreground font-medium capitalize truncate">{trip.trip_type}</div>
-                        <div className="text-muted-foreground/60 truncate">{trip.pickup_location}</div>
+                        <div className="text-muted-foreground truncate">{trip.pickup_location}</div>
                       </div>
                       <span className={cn('flex-shrink-0 text-xs px-1.5 py-0.5 rounded border',
-                        isToday ? 'bg-primary/10 text-primary border-primary/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20')}>
+                        isToday ? 'bg-primary/10 text-primary border-primary/20' : 'bg-info/10 text-info border-info/20')}>
                         {isToday ? "Auj." : dt.toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}
                       </span>
                     </button>
