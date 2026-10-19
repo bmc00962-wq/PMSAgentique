@@ -67,7 +67,7 @@ const GROUP_LABELS: Record<string, Record<string, string>> = {
 const NAV = [
   {
     groupKey: "foundation",
-    dot: "bg-purple-500",
+    dot: "bg-primary/60",
     items: [
       { id: "dashboard", path: "/dashboard", key: "dashboard", ready: true },
       { id: "settings", path: "/settings", key: "settings", ready: true },
@@ -75,7 +75,7 @@ const NAV = [
   },
   {
     groupKey: "core",
-    dot: "bg-blue-500",
+    dot: "bg-primary/60",
     items: [
       { id: "owners", path: "/owners", key: "owners", ready: true },
       { id: "properties", path: "/properties", key: "properties", ready: true },
@@ -88,7 +88,7 @@ const NAV = [
   },
   {
     groupKey: "domain",
-    dot: "bg-emerald-500",
+    dot: "bg-primary/60",
     items: [
       { id: "housekeeping", path: "/housekeeping", key: "housekeeping", ready: true },
       { id: "maintenance", path: "/maintenance", key: "maintenance", ready: true },
@@ -99,7 +99,7 @@ const NAV = [
   },
   {
     groupKey: "governance",
-    dot: "bg-orange-500",
+    dot: "bg-primary/60",
     items: [
       { id: "integrations", path: "/integrations/n8n", key: "integrations", ready: true },
       { id: "agents", path: "/agents", key: "agents", ready: true },
@@ -108,7 +108,7 @@ const NAV = [
   },
   {
     groupKey: "platform",
-    dot: "bg-rose-500",
+    dot: "bg-primary/60",
     items: [
       { id: "saasadmin", path: "/saas-admin", key: "saasadmin", ready: true },
       { id: "pricing", path: "/pricing", key: "pricing", ready: true },
@@ -148,7 +148,7 @@ const Sidebar = ({ collapsed, mobileOpen, onMobileClose }: SidebarProps) => {
   return (
     <aside
       className={cn(
-        "flex-shrink-0 bg-card border-r border-border flex flex-col transition-all duration-200 z-30",
+        "flex-shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-200 z-30",
         "fixed inset-y-0 left-0 lg:relative lg:translate-x-0",
         collapsed ? "w-[60px]" : "w-[240px]",
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -183,7 +183,7 @@ const Sidebar = ({ collapsed, mobileOpen, onMobileClose }: SidebarProps) => {
                 {!collapsed && (
                   <div className="flex items-center gap-1.5 px-2 mb-1">
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${group.dot}`} />
-                    <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {GROUP_LABELS[group.groupKey]?.[language] ?? GROUP_LABELS[group.groupKey]?.fr}
                     </span>
                   </div>
@@ -195,9 +195,9 @@ const Sidebar = ({ collapsed, mobileOpen, onMobileClose }: SidebarProps) => {
                     const label = t("nav", item.key);
                     return (
                       <button key={item.id} onClick={() => handleNav(item.path, item.ready)}
-                        className={cn('w-full flex items-center rounded-lg transition-colors text-xs font-medium',
-                          collapsed ? 'h-9 justify-center' : 'h-8 gap-2.5 px-2.5',
-                          isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary')}>
+                        className={cn('w-full flex items-center rounded-lg transition-opacity text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring',
+                          collapsed ? 'h-11 justify-center' : 'min-h-[44px] gap-2.5 px-2.5',
+                          isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground hover:text-foreground hover:bg-sidebar-accent/60')}>
                         <Icon className={cn('flex-shrink-0', collapsed ? 'w-4 h-4' : 'w-3.5 h-3.5')} />
                         {!collapsed && <span className="flex-1 text-left truncate">{label}</span>}
                       </button>
@@ -217,7 +217,7 @@ const Sidebar = ({ collapsed, mobileOpen, onMobileClose }: SidebarProps) => {
             {!collapsed && (
               <div className="flex items-center gap-1.5 px-2 mb-1">
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${group.dot}`} />
-                <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {GROUP_LABELS[group.groupKey]?.[language] ?? GROUP_LABELS[group.groupKey]?.fr}
                 </span>
               </div>
@@ -234,12 +234,12 @@ const Sidebar = ({ collapsed, mobileOpen, onMobileClose }: SidebarProps) => {
                     onClick={() => handleNav(item.path, item.ready)}
                     title={collapsed ? label : undefined}
                     className={cn(
-                      "w-full flex items-center rounded-lg transition-colors text-xs font-medium",
-                      collapsed ? "h-9 justify-center" : "h-8 gap-2.5 px-2.5",
+                      "w-full flex items-center rounded-lg transition-opacity text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring",
+                      collapsed ? "h-11 justify-center" : "min-h-[44px] gap-2.5 px-2.5",
                       isActive
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
                         : item.ready
-                        ? "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        ? "text-sidebar-foreground hover:text-foreground hover:bg-sidebar-accent/60"
                         : "text-muted-foreground/40 cursor-not-allowed"
                     )}
                   >
@@ -262,9 +262,9 @@ const Sidebar = ({ collapsed, mobileOpen, onMobileClose }: SidebarProps) => {
       {/* Footer */}
       {!collapsed && (
         <div className="border-t border-border p-3">
-          <div className="bg-secondary/40 border border-amber-500/20 rounded-lg p-2.5">
-            <p className="text-xs text-amber-400 font-medium">Phase 25 — Production ✓</p>
-            <p className="text-xs text-muted-foreground/70 mt-0.5">88/88 checks · RTO 4h · PROD READY 🚀</p>
+          <div className="bg-accent/60 border border-primary/15 rounded-lg p-2.5">
+            <p className="text-xs text-primary font-medium">Phase 25 — Production ✓</p>
+            <p className="text-xs text-muted-foreground mt-0.5">88/88 checks · RTO 4h · PROD READY</p>
           </div>
         </div>
       )}
