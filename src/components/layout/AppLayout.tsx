@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Sidebar from '@/components/layout/Sidebar';
-import Header from '@/components/layout/Header';
+import Sidebar from "./Sidebar";
+import Header from "./Header";
 import ErrorBoundary from "@/components/features/ErrorBoundary";
 
 interface AppLayoutProps {
@@ -16,7 +16,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       {/* Mobile overlay */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-overlay/35 z-20 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
@@ -36,7 +36,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           onMobileMenuOpen={() => setMobileSidebarOpen(true)}
         />
         <main className="flex-1 overflow-auto">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+          <div className="p-6 max-w-7xl mx-auto">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
