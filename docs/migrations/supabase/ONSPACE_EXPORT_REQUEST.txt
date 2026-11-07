@@ -1,0 +1,21 @@
+To: contact@onspace.ai
+Subject: Request for approved database/Auth export to migrate my PMS to Supabase
+
+Hello OnSpace Support,
+
+I would like to migrate my PMS application from OnSpace Cloud to a new Supabase project.
+Source backend: https://zacqlouyrjbudrbnzacq.backend.onspace.ai
+
+I have prepared a live catalog-based schema/security exporter. To complete a consistent migration, please confirm whether you can provide an approved PostgreSQL dump or approved database access, including:
+
+1. All application records with original user, tenant and entity UUIDs, exact numeric precision and foreign-key links.
+2. Auth identities with preserved UUIDs; whether password hashes/identity metadata can be migrated safely and which Auth tables are supported.
+3. Database schema, constraints, indexes, RLS policies, grants/default privileges and custom functions/triggers, including custom Auth/Storage changes.
+4. Storage metadata and a supported method to transfer file contents, if any.
+5. A method to obtain a final transactionally consistent export during a planned source-write pause, plus any encrypted-data migration prerequisites.
+
+Please explain what is included or excluded, how to retrieve the export securely, and whether any fees or restrictions apply. I understand that I cannot switch this existing OnSpace project's backend type in place and will use an exported application or a newly created Supabase-backed project.
+
+Please do not send credentials or unencrypted customer data through ordinary email; let me know the approved secure delivery method.
+
+Thank you.

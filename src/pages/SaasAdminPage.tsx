@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
+import MigrationExportPanel from '@/components/features/MigrationExportPanel';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -380,6 +381,8 @@ const SaasAdminPage = () => {
             <RefreshCw className="w-3.5 h-3.5" /> Actualiser
           </button>
         </div>
+
+        <MigrationExportPanel />
 
         {/* KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

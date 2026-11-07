@@ -1,0 +1,32 @@
+export const MIGRATION_COPY = {
+  en: {
+    title: 'Prepare Supabase migration', eyebrow: 'SCHEMA & SECURITY',
+    description: 'Download SQL generated from your current database, together with existing backend function code and restore instructions.',
+    included: 'Included', scope: 'Tables and constraints · RLS and grants · Functions and triggers · Storage definitions',
+    excluded: 'Not a complete backup: records, Auth accounts/passwords, Storage files and secrets require separate transfers.',
+    action: 'Download migration ZIP', loading: 'Preparing migration files…',
+    denied: 'Only a platform super administrator can export this package.',
+    success: 'Migration ZIP downloaded. Your live database was not changed.', error: 'Unable to export the migration package.',
+    review: 'Security rules are preserved as they are. Review and test them before activating the destination.',
+  },
+  fr: {
+    title: 'Préparer la migration Supabase', eyebrow: 'SCHÉMA & SÉCURITÉ',
+    description: 'Téléchargez le SQL généré depuis votre base actuelle, avec le code des fonctions backend et les instructions de restauration.',
+    included: 'Inclus', scope: 'Tables et contraintes · RLS et permissions · Fonctions et déclencheurs · Définitions Storage',
+    excluded: 'Ce n’est pas une sauvegarde complète : données, comptes et mots de passe Auth, fichiers Storage et secrets doivent être transférés séparément.',
+    action: 'Télécharger le ZIP de migration', loading: 'Préparation des fichiers…',
+    denied: 'Seul un super administrateur plateforme peut exporter ce package.',
+    success: 'ZIP téléchargé. Votre base actuelle n’a pas été modifiée.', error: 'Impossible d’exporter le package de migration.',
+    review: 'Les règles de sécurité sont conservées en l’état. Vérifiez-les et testez-les avant d’activer la destination.',
+  },
+  ar: {
+    title: 'تحضير النقل إلى Supabase', eyebrow: 'البنية والأمان',
+    description: 'نزّل SQL المستخرج من قاعدة البيانات الحالية مع كود وظائف الخادم وتعليمات الاستعادة.',
+    included: 'المحتويات', scope: 'الجداول والقيود · سياسات RLS والصلاحيات · الدوال والمحفزات · تعريفات التخزين',
+    excluded: 'ليست نسخة احتياطية كاملة: السجلات وحسابات Auth وكلمات المرور والملفات والأسرار تحتاج إلى نقل منفصل.',
+    action: 'تنزيل حزمة النقل ZIP', loading: 'جارٍ تحضير الملفات…',
+    denied: 'يمكن فقط للمشرف الأعلى للمنصة تصدير هذه الحزمة.',
+    success: 'تم تنزيل ZIP دون تغيير قاعدة البيانات الحالية.', error: 'تعذر تصدير حزمة النقل.',
+    review: 'تُحفظ قواعد الأمان كما هي. راجعها واختبرها قبل تفعيل الوجهة.',
+  },
+} as const;
