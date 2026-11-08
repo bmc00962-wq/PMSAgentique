@@ -10,6 +10,7 @@ Inventory: ${snapshot.tables.length} public tables, ${snapshot.policies.length} 
 This is a live catalog-derived SCHEMA/SECURITY package, NOT a full backup or a completed migration.
 No customer records, Auth identities/passwords, sessions, file contents, or secret values are included.
 The ZIP also includes existing Edge Function source code from the application repository when downloaded through SaaS Admin. Review its runtime dependencies separately.
+Metadata is read through one fixed, STABLE catalog RPC using the verified caller's JWT; no direct PostgreSQL connection is required. The source-only export_migration_catalog helper and its execution grants are excluded from this destination package.
 
 ## Restore order (fresh staging Supabase project only)
 1. Create a new Supabase project and back up any destination data. Never run these scripts on OnSpace Cloud.
@@ -46,6 +47,6 @@ Contact contact@onspace.ai for an approved consistent record/Auth export or appr
 - https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore
 - docs/migrations/supabase/README.md in your exported project
 
-The manifest contains SHA-256 checksums for server-generated SQL/guide files. Existing Edge Function code is bundled separately by the client and must be code-reviewed and redeployed; it is not part of the database snapshot transaction.
+The manifest contains SHA-256 checksums for server-generated SQL/guide files. Existing Edge Function code is bundled separately by the client and must be code-reviewed and redeployed; it is not part of the catalog's single-statement metadata snapshot.
 `;
 }

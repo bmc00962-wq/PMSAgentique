@@ -4,7 +4,7 @@ import { FUNCTIONS_SQL, POLICIES_SQL, GRANTS_SQL, DEFAULT_GRANTS_SQL, TRIGGERS_S
 import { EXTENSIONS_SQL, STORAGE_SQL, POLICY_COMMENTS_SQL } from './storageCatalog.ts';
 
 export async function readSnapshot(query: Query): Promise<Snapshot> {
-  // A single repeatable-read, read-only transaction provides a consistent metadata snapshot.
+  // All sections come from one STABLE, read-only catalog RPC and share its statement snapshot.
   const unsupported = await query<{ reason: string }>(UNSUPPORTED_SQL);
   if (unsupported.length) {
     throw new Error('Unsupported schema objects require a reviewed pg_dump export.');
@@ -29,6 +29,7 @@ export async function readSnapshot(query: Query): Promise<Snapshot> {
     'Triggers must be installed only after Auth identities and application records are imported.',
     'Only public application tables/functions and custom auth/storage triggers plus storage.objects policies are supported.',
     'Future schema features outside this supported scope require pg_dump; this export is not a full database backup.',
+    'The source-only export_migration_catalog helper and its execution grants are intentionally excluded.',
   ];
   for (const f of functions.filter(f => f.security_definer)) {
     warnings.push(`Review SECURITY DEFINER function ${f.signature}: execution grants and search_path are preserved from the source.`);
