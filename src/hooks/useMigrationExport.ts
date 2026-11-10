@@ -10,7 +10,7 @@ export function useMigrationExport() {
     mutationFn: async () => {
       // Load ZIP generation and raw Edge Function sources only when explicitly requested.
       const { downloadMigrationPackage } = await import('@/lib/migrationExport');
-      return downloadMigrationPackage(language);
+      return downloadMigrationPackage();
     },
     onSuccess: () => toast.success(copy.success),
     onError: (error: Error) => toast.error(error.message || copy.error),

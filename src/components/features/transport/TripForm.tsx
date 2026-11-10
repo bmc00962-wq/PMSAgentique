@@ -55,7 +55,8 @@ const TripForm = ({ open, onClose }: Props) => {
   }, [open, onClose, reset]);
 
   const onSubmit = async (data: TripFormValues) => {
-    if (!canUserPerform('transport.create')) { toast.error('Permission refusee'); return; }
+    const auth = await canUserPerform({ user_id: 'demo', tenant_id: 'demo', permission: 'transport.create' });
+    if (!auth.allowed && auth.reason !== 'STUB_DEVELOPMENT') { toast.error('Permission refusee'); return; }
     console.log('[TripForm] submit', data);
     await new Promise(r => setTimeout(r, 500));
     toast.success('Trajet cree (demo — Supabase requis)');

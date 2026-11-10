@@ -18,7 +18,7 @@ export function parseMigrationBundle(input: unknown): MigrationBundle {
   const required = ['00_preflight.sql', '01_tables.sql', '02_functions.sql', '03_relationships.sql', '04_security.sql',
     '05_storage.sql', '06_validate_schema.sql', '07_install_triggers_AFTER_DATA.sql', 'README.md', 'manifest.json'];
   if (required.some(name => !bundle.files[name])) throw new Error('The migration package is incomplete. Generate it again.');
-  return bundle;
+  return bundle as MigrationBundle;
 }
 
 export function parseMigrationManifest(content: string) {

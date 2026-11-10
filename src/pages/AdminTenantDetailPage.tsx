@@ -2,11 +2,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Building2, Users, Settings, BarChart2, Activity, Edit3, UserPlus,
-  CheckCircle2, XCircle, RefreshCw, Key, Shield, Globe, DollarSign,
-  Loader2, ChevronRight, Trash2, AlertTriangle,
-} from 'lucide-react';
+import { Building2, Users, Settings, ChartBar as BarChart2, Activity, CreditCard as Edit3, UserPlus, CircleCheck as CheckCircle2, Circle as XCircle, RefreshCw, Key, Shield, Globe, DollarSign, Loader as Loader2, ChevronRight, Trash2, TriangleAlert as AlertTriangle } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
@@ -74,6 +70,7 @@ async function fetchTenantDetail(tenantId: string) {
 
   const memberships = (membershipsRes.data ?? []).map(m => ({
     ...m,
+    joined_at: m.created_at,
     profile: profiles.find(p => p.id === m.user_id),
   }));
 

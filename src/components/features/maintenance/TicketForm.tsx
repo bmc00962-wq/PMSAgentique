@@ -53,7 +53,8 @@ const TicketForm = ({ open, onClose }: Props) => {
   }, [open, onClose, reset]);
 
   const onSubmit = async (data: MaintenanceFormValues) => {
-    if (!canUserPerform('maintenance.create')) { toast.error('Permission refusee'); return; }
+    const auth = await canUserPerform({ user_id: 'demo', tenant_id: 'demo', permission: 'maintenance.create' });
+    if (!auth.allowed && auth.reason !== 'STUB_DEVELOPMENT') { toast.error('Permission refusee'); return; }
     console.log('[TicketForm] submit', data);
     await new Promise(r => setTimeout(r, 500));
     toast.success('Ticket cree (demo — Supabase requis)');

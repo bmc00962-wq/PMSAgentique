@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  CheckCircle2, Building2, Users, Globe, Zap, Shield, Star,
-  Crown, ArrowRight, RefreshCw, Phone, Mail, Sparkles,
-} from 'lucide-react';
+import { CircleCheck as CheckCircle2, Building2, Users, Globe, Zap, Shield, Star, Crown, ArrowRight, RefreshCw, Phone, Mail, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
@@ -209,6 +206,7 @@ const PLAN_STYLE: Record<string, {
   border: string;
   icon: React.ComponentType<{ className?: string }>;
   popular?: boolean;
+  badge?: string;
 }> = {
   trial: {
     color: 'text-slate-300',

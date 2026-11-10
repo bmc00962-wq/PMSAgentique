@@ -2,12 +2,7 @@
 // KPIs: reservations, properties, housekeeping jobs, revenue, occupancy
 // Panneau alertes: check-in aujourd'hui, approbations urgentes, HK en retard
 
-import {
-  Building2, BookOpen, Sparkles, DollarSign,
-  Plus, CalendarDays, Users, BarChart2,
-  ArrowRight, Clock, CheckCircle2, AlertTriangle, TrendingUp,
-  Wrench, Car, ClipboardCheck, Bell, LogIn,
-} from "lucide-react";
+import { Building2, BookOpen, Sparkles, DollarSign, Plus, CalendarDays, Users, ChartBar as BarChart2, ArrowRight, Clock, CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, TrendingUp, Wrench, Car, ClipboardCheck, Bell, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -323,7 +318,7 @@ const Dashboard = () => {
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-semibold text-foreground">
-            {greeting}, {user?.full_name?.split(" ")[0] ?? user?.username ?? "…"} 👋
+            {greeting}, {user?.full_name?.split(" ")[0] ?? "…"} 👋
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {membership?.role

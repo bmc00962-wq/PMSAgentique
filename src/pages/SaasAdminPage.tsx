@@ -3,12 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import {
-  Shield, Building2, Users, Activity, AlertTriangle,
-  CheckCircle2, XCircle, Search, RefreshCw, DollarSign, Info, Lock,
-  Key, Eye, EyeOff, ChevronDown, ChevronRight, ArrowRight, Settings,
-  BarChart2, Globe,
-} from 'lucide-react';
+import { Shield, Building2, Users, Activity, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, Circle as XCircle, Search, RefreshCw, DollarSign, Info, Lock, Key, Eye, EyeOff, ChevronDown, ChevronRight, ArrowRight, Settings, ChartBar as BarChart2, Globe } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import MigrationExportPanel from '@/components/features/MigrationExportPanel';
@@ -175,7 +170,7 @@ async function fetchSaasData() {
 
   const { data: auditEvents } = await supabase
     .from('audit_events')
-    .select('id, action, entity_type, actor_type, created_at')
+    .select('id, action, entity_type, actor_type, created_at, tenant_id')
     .order('created_at', { ascending: false })
     .limit(30);
 

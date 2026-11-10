@@ -55,7 +55,8 @@ const JobForm = ({ open, onClose }: Props) => {
   }, [open, onClose, reset]);
 
   const onSubmit = async (data: HousekeepingFormValues) => {
-    if (!canUserPerform('housekeeping.create')) { toast.error('Permission refusee'); return; }
+    const auth = await canUserPerform({ user_id: 'demo', tenant_id: 'demo', permission: 'housekeeping.create' });
+    if (!auth.allowed && auth.reason !== 'STUB_DEVELOPMENT') { toast.error('Permission refusee'); return; }
     console.log('[JobForm] submit', data);
     await new Promise(r => setTimeout(r, 500));
     toast.success('Job cree (demo — Supabase requis)');

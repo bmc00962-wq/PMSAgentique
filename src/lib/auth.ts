@@ -113,7 +113,9 @@ export type Permission =
   // Tenant
   | "tenant.admin" | "tenant.settings.update" | "tenant.members.manage" | "tenant.billing.read"
   // Audit
-  | "audit.read" | "audit.export";
+  | "audit.read" | "audit.export"
+  | "calendar.write" | "channel.connect"
+  | "housekeeping.create" | "maintenance.create" | "transport.create";
 
 export interface AuthorizationRequest {
   user_id: string;

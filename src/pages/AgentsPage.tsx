@@ -1,10 +1,7 @@
 // AgentsPage — Live Supabase data — ADR-017, ADR-019, ADR-020
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Bot, Shield, Clock, Zap, CheckCircle2, AlertTriangle, RefreshCw,
-  Play, XCircle, ChevronRight, Info, Activity, Lock,
-} from 'lucide-react';
+import { Bot, Shield, Clock, Zap, CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, RefreshCw, Play, Circle as XCircle, ChevronRight, Info, Activity, Lock } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
@@ -412,7 +409,7 @@ const AgentsPage = () => {
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-semibold text-foreground">{agent.name}</h3>
                         {agent.restricted && (
-                          <Lock className="w-3 h-3 text-rose-400" title="Approbation obligatoire" />
+                          <span title="Approbation obligatoire"><Lock className="w-3 h-3 text-rose-400" /></span>
                         )}
                       </div>
                       <p className="text-xs font-mono text-muted-foreground/60">{agent.id}</p>
