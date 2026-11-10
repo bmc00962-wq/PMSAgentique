@@ -4,17 +4,12 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
-  Home, BedDouble, Users, DollarSign,
-  Calendar, BookOpen, Sparkles, Lock, TrendingUp,
-  CheckCircle2, Clock, Hash, Layers, Edit, Plus,
-} from 'lucide-react';
+import { Chrome as Home, BedDouble, Users, DollarSign, Calendar, BookOpen, Sparkles, Lock, TrendingUp, CircleCheck as CheckCircle2, Clock, Hash, Layers, CreditCard as Edit, Plus } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const UNIT_TYPE_LABELS: Record<string, string> = {
   apartment: 'Appartement', studio: 'Studio', chalet: 'Chalet',
@@ -55,12 +50,12 @@ const PRIORITY_COLOR: Record<string, string> = {
 
 type TabId = 'reservations' | 'housekeeping' | 'rates' | 'locks';
 
-async function fetchUnitDetail(id: string) {
+async function fetchUnitDetail(id: string, tenantId: string) {
   const { data: unit, error } = await supabase
     .from('units')
     .select('id, name, unit_type, property_id, bedrooms, bathrooms, max_guests, base_rate, cleaning_fee, currency, status, floor, area_sqm, smart_lock_id, version, created_at, updated_at')
     .eq('id', id)
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single();
   if (error) throw error;
 
@@ -72,27 +67,27 @@ async function fetchUnitDetail(id: string) {
     supabase.from('reservations')
       .select('id, status, channel, check_in, check_out, nights, guest_first_name, guest_last_name, total_amount, currency, guests_count')
       .eq('unit_id', id)
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .order('check_in', { ascending: false })
       .limit(20),
     supabase.from('housekeeping_jobs')
       .select('id, job_type, status, scheduled_date, priority, notes, assigned_to')
       .eq('unit_id', id)
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .order('scheduled_date', { ascending: false })
       .limit(15),
     supabase.from('rate_plans')
       .select('id, name, rate_type, base_rate, min_stay, start_date, end_date, is_active, days_of_week')
       .eq('unit_id', id)
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
     supabase.from('smart_lock_codes')
       .select('id, code_type, code_value, is_active, valid_from, valid_until, provider')
       .eq('unit_id', id)
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .order('valid_from', { ascending: false })
       .limit(20),
   ]);
@@ -144,12 +139,15 @@ const UnitDetailPage = () => {
   const toggleReveal = (codeId: string) =>
     setRevealedCodes(prev => { const n = new Set(prev); n.has(codeId) ? n.delete(codeId) : n.add(codeId); return n; });
 
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
+
   const addLockCode = useMutation({
     mutationFn: async (payload: { unit_id: string; code_type: string; code_value: string; days: number }) => {
       const now = new Date();
       const until = new Date(now.getTime() + payload.days * 86400_000);
       const { error } = await supabase.from('smart_lock_codes').insert({
-        tenant_id: TENANT_ID, unit_id: payload.unit_id,
+        tenant_id: tenantId, unit_id: payload.unit_id,
         code_type: payload.code_type, code_value: payload.code_value,
         is_active: true, valid_from: now.toISOString(), valid_until: until.toISOString(), provider: 'manual',
       });
@@ -175,14 +173,14 @@ const UnitDetailPage = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['unit-detail', id],
-    queryFn: () => fetchUnitDetail(id!),
+  const { data, isPending } = useQuery({
+    queryKey: ['unit-detail', id, tenantId],
+    queryFn: () => fetchUnitDetail(id!, tenantId),
     enabled: !!id,
     staleTime: 60_000,
   });
 
-  if (isLoading) return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
+  if (isPending) return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
 
   if (!data?.unit) {
     return (

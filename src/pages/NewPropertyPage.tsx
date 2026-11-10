@@ -7,18 +7,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Building2, MapPin, Users, DollarSign,
-  ChevronRight, CheckCircle2, Loader2, ChevronDown, Home, Search,
-} from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, Users, DollarSign, ChevronRight, CircleCheck as CheckCircle2, Loader as Loader2, ChevronDown, Chrome as Home, Search } from 'lucide-react';
 import { MOROCCAN_CITIES_SORTED } from '@/constants/moroccanCities';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 // ── Step 1 schema — Property ──────────────────────────────────────────────────
 const propertySchema = z.object({
@@ -100,24 +96,27 @@ const Field = ({
 const NewPropertyPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
   const [step, setStep] = useState<1 | 2>(1);
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
   const [propertyData, setPropertyData] = useState<PropertyFormData | null>(null);
 
   // Load owners for dropdown
-  const { data: owners = [], isLoading: ownersLoading } = useQuery({
-    queryKey: ['owners-list', TENANT_ID],
+  const { data: owners = [], isPending: ownersLoading } = useQuery({
+    queryKey: ['owners-list', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('owners')
         .select('id, first_name, last_name, city')
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('last_name');
       if (error) throw error;
       return data ?? [];
     },
+    enabled: !!tenantId,
     staleTime: 60_000,
   });
 
@@ -153,7 +152,7 @@ const NewPropertyPage = () => {
       const { data: property, error } = await supabase
         .from('properties')
         .insert({
-          tenant_id:     TENANT_ID,
+          tenant_id:     tenantId,
           owner_id:      data.owner_id,
           name:          data.name.trim(),
           property_type: data.property_type,
@@ -186,7 +185,7 @@ const NewPropertyPage = () => {
       const { data: unit, error } = await supabase
         .from('units')
         .insert({
-          tenant_id:    TENANT_ID,
+          tenant_id:    tenantId,
           property_id:  createdPropertyId,
           name:         data.name.trim(),
           unit_type:    data.unit_type,
@@ -204,8 +203,8 @@ const NewPropertyPage = () => {
       return unit;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties', TENANT_ID] });
-      queryClient.invalidateQueries({ queryKey: ['owners', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['properties', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['owners', tenantId] });
       toast.success('Propriété et unité créées ✓');
       navigate(`/properties/${createdPropertyId}`);
     },
@@ -214,7 +213,7 @@ const NewPropertyPage = () => {
 
   // Skip unit step
   const skipUnit = () => {
-    queryClient.invalidateQueries({ queryKey: ['properties', TENANT_ID] });
+    queryClient.invalidateQueries({ queryKey: ['properties', tenantId] });
     navigate(`/properties/${createdPropertyId}`);
   };
 

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCanUserPerform } from "@/hooks/useCanUserPerform";
 import LoadingSpinner from "@/components/features/LoadingSpinner";
+import WorkspaceSetup from "@/components/features/WorkspaceSetup";
 import { ShieldAlert } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -95,6 +96,11 @@ const ProtectedRoute = ({ children, requiredPermission, redirectOnDenied = false
   // ── Layer 2: Not authenticated → /login ───────────────────────────────────
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // ── Layer 2b: Signed in without a workspace → create one first ───────────
+  if (!membership) {
+    return <WorkspaceSetup />;
   }
 
   // ── Layer 3: RBAC check (if requiredPermission set) ───────────────────────

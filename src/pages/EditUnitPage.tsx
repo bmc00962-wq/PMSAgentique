@@ -5,17 +5,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Home, BedDouble, Users, DollarSign,
-  Save, Loader2, Hash, Layers, Lock, Info,
-} from 'lucide-react';
+import { ArrowLeft, Chrome as Home, BedDouble, Users, DollarSign, Save, Loader as Loader2, Hash, Layers, Lock, Info } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const unitSchema = z.object({
   name:         z.string().min(1, 'Nom requis').max(100),
@@ -71,12 +67,12 @@ const Field = ({ label, required, error, hint, children }: {
   </div>
 );
 
-async function fetchUnit(id: string) {
+async function fetchUnit(id: string, tenantId: string) {
   const { data: unit, error } = await supabase
     .from('units')
     .select('id, name, unit_type, property_id, bedrooms, bathrooms, max_guests, area_sqm, floor, base_rate, cleaning_fee, currency, status, smart_lock_id, version')
     .eq('id', id)
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single();
   if (error) throw error;
 
@@ -93,10 +89,12 @@ const EditUnitPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['unit-edit', id],
-    queryFn: () => fetchUnit(id!),
+  const { data, isPending } = useQuery({
+    queryKey: ['unit-edit', id, tenantId],
+    queryFn: () => fetchUnit(id!, tenantId),
     enabled: !!id,
     staleTime: 30_000,
   });
@@ -148,7 +146,7 @@ const EditUnitPage = () => {
           updated_at:    new Date().toISOString(),
         })
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID);
+        .eq('tenant_id', tenantId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -161,7 +159,7 @@ const EditUnitPage = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading) {
+  if (isPending) {
     return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
   }
 

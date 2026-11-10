@@ -5,16 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Users, Mail, Phone, MapPin,
-  Globe, MessageSquare, CheckCircle2, Loader2,
-} from 'lucide-react';
+import { ArrowLeft, Users, Mail, Phone, MapPin, Globe, MessageSquare, CircleCheck as CheckCircle2, Loader as Loader2 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 const ownerSchema = z.object({
@@ -76,6 +72,8 @@ const selectCls =
 const NewOwnerPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
   const {
     register, handleSubmit,
@@ -91,7 +89,7 @@ const NewOwnerPage = () => {
       const { data: owner, error } = await supabase
         .from('owners')
         .insert({
-          tenant_id: TENANT_ID,
+          tenant_id: tenantId,
           first_name: data.first_name.trim(),
           last_name:  data.last_name.trim(),
           email:      data.email.trim().toLowerCase(),
@@ -109,7 +107,7 @@ const NewOwnerPage = () => {
       return owner;
     },
     onSuccess: (owner) => {
-      queryClient.invalidateQueries({ queryKey: ['owners', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['owners', tenantId] });
       toast.success('Propriétaire créé avec succès ✓');
       navigate(`/owners/${owner.id}`);
     },

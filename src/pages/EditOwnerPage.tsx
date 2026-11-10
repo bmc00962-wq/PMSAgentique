@@ -5,17 +5,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Users, Mail, Phone, MapPin,
-  Globe, MessageSquare, CheckCircle2, Loader2, Save,
-} from 'lucide-react';
+import { ArrowLeft, Users, Mail, Phone, MapPin, Globe, MessageSquare, CircleCheck as CheckCircle2, Loader as Loader2, Save } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 // ── Zod schema (same as NewOwnerPage) ────────────────────────────────────────
 const ownerSchema = z.object({
@@ -72,21 +68,23 @@ const EditOwnerPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
   // Load existing owner
-  const { data: owner, isLoading } = useQuery({
-    queryKey: ['owner-edit', id],
+  const { data: owner, isPending } = useQuery({
+    queryKey: ['owner-edit', id, tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('owners')
         .select('*')
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && !!tenantId,
   });
 
   const {
@@ -130,11 +128,11 @@ const EditOwnerPage = () => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID);
+        .eq('tenant_id', tenantId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['owners', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['owners', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['owner', id] });
       queryClient.invalidateQueries({ queryKey: ['owner-edit', id] });
       toast.success('Propriétaire mis à jour ✓');
@@ -143,7 +141,7 @@ const EditOwnerPage = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <AppLayout>
         <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>

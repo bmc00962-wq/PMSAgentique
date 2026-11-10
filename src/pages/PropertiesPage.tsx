@@ -2,13 +2,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Search, Building2, CheckCircle2, SlidersHorizontal, MapPin, Home } from 'lucide-react';
+import { Plus, Search, Building2, CircleCheck as CheckCircle2, SlidersHorizontal, MapPin, Chrome as Home } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
+const tenantId = '00000000-0000-0000-0000-000000000001';
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'Toutes' },
@@ -27,11 +28,11 @@ const TYPE_LABELS: Record<string, string> = {
   riad: 'Riad', studio: 'Studio', house: 'Maison', other: 'Autre',
 };
 
-async function fetchProperties() {
+async function fetchProperties(tenantId: string) {
   const { data, error } = await supabase
     .from('properties')
     .select('id, name, property_type, address, city, country, status, owner_id, description, amenities, created_at')
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -49,7 +50,7 @@ async function fetchProperties() {
   const { data: units } = await supabase
     .from('units')
     .select('id, property_id')
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null);
   const unitCount: Record<string, number> = {};
   for (const u of units ?? []) unitCount[u.property_id] = (unitCount[u.property_id] ?? 0) + 1;
@@ -66,9 +67,12 @@ const PropertiesPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data: properties = [], isLoading } = useQuery({
-    queryKey: ['properties', TENANT_ID],
-    queryFn: fetchProperties,
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
+  const { data: properties = [], isPending } = useQuery({
+    queryKey: ['properties', tenantId],
+    queryFn: () => fetchProperties(tenantId),
+    enabled: !!tenantId,
     staleTime: 60_000,
   });
 
@@ -143,7 +147,7 @@ const PropertiesPage = () => {
         </div>
 
         {/* Grid */}
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

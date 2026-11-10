@@ -5,17 +5,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Building2, Home, DollarSign, Users,
-  Hash, Layers, Save, Loader2, BedDouble,
-} from 'lucide-react';
+import { ArrowLeft, Building2, Chrome as Home, DollarSign, Users, Hash, Layers, Save, Loader as Loader2, BedDouble } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const unitSchema = z.object({
   name:        z.string().min(1, 'Nom requis').max(120),
@@ -81,14 +77,17 @@ const NewUnitPage = () => {
   // Property ID from param or query string
   const preselectedPropertyId = paramPropertyId ?? searchParams.get('property_id') ?? '';
 
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
+
   // Load properties for dropdown
   const { data: properties = [], isLoading: propsLoading } = useQuery({
-    queryKey: ['properties-list-unit', TENANT_ID],
+    queryKey: ['properties-list-unit', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
         .select('id, name, city')
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('name');
@@ -128,7 +127,7 @@ const NewUnitPage = () => {
       const { data: unit, error } = await supabase
         .from('units')
         .insert({
-          tenant_id:    TENANT_ID,
+          tenant_id:    tenantId,
           property_id:  data.property_id,
           name:         data.name.trim(),
           unit_type:    data.unit_type,
@@ -148,9 +147,9 @@ const NewUnitPage = () => {
       return unit;
     },
     onSuccess: (unit) => {
-      queryClient.invalidateQueries({ queryKey: ['properties', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['properties', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['property-detail', preselectedPropertyId] });
-      queryClient.invalidateQueries({ queryKey: ['units', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['units', tenantId] });
       toast.success('Unité créée avec succès ✓');
       // Navigate back to property if we know it
       if (preselectedPropertyId) {

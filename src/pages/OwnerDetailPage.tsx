@@ -1,13 +1,12 @@
 // OwnerDetailPage — Live Supabase data — ADR-004
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Edit, Mail, Phone, MapPin, Globe, Building2, DollarSign, FileText, CalendarDays } from 'lucide-react';
+import { ArrowLeft, CreditCard as Edit, Mail, Phone, MapPin, Globe, Building2, DollarSign, FileText, CalendarDays } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const STATUS_STYLE: Record<string, string> = {
   active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -16,10 +15,10 @@ const STATUS_STYLE: Record<string, string> = {
 };
 const STATUS_LABEL: Record<string, string> = { active: 'Actif', inactive: 'Inactif', pending: 'En attente' };
 
-async function fetchOwnerDetail(id: string) {
+async function fetchOwnerDetail(id: string, tenantId: string) {
   const [ownerRes, propsRes] = await Promise.all([
-    supabase.from('owners').select('*').eq('id', id).eq('tenant_id', TENANT_ID).single(),
-    supabase.from('properties').select('id, name, city, country, status, property_type').eq('owner_id', id).eq('tenant_id', TENANT_ID).is('deleted_at', null),
+    supabase.from('owners').select('*').eq('id', id).eq('tenant_id', tenantId).single(),
+    supabase.from('properties').select('id, name, city, country, status, property_type').eq('owner_id', id).eq('tenant_id', tenantId).is('deleted_at', null),
   ]);
   if (ownerRes.error) throw ownerRes.error;
 
@@ -38,7 +37,7 @@ async function fetchOwnerDetail(id: string) {
     .from('owner_statements')
     .select('id, period_start, period_end, total_revenue, net_payout, status, currency, created_at')
     .eq('owner_id', id)
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   return {
@@ -51,11 +50,13 @@ async function fetchOwnerDetail(id: string) {
 const OwnerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
   const { data, isLoading } = useQuery({
-    queryKey: ['owner-detail', id],
-    queryFn: () => fetchOwnerDetail(id!),
-    enabled: !!id,
+    queryKey: ['owner-detail', id, tenantId],
+    queryFn: () => fetchOwnerDetail(id!, tenantId),
+    enabled: !!id && !!tenantId,
     staleTime: 60_000,
   });
 
@@ -234,7 +235,6 @@ const OwnerDetailPage = () => {
         </div>
       </div>
 
-      {owner && navigate && null /* edit via route */}
     </AppLayout>
   );
 };

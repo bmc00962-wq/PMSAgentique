@@ -2,16 +2,12 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Edit, MapPin, Clock, Users, Building2, CheckCircle2,
-  Wrench, BookOpen, Home, DollarSign, Calendar, AlertTriangle, Info, Plus,
-} from 'lucide-react';
+import { ArrowLeft, CreditCard as Edit, MapPin, Clock, Users, Building2, CircleCheck as CheckCircle2, Wrench, BookOpen, Chrome as Home, DollarSign, Calendar, TriangleAlert as AlertTriangle, Info, Plus } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const TYPE_LABEL: Record<string, string> = {
   apartment: 'Appartement', house: 'Maison', villa: 'Villa', condo: 'Condo',
@@ -41,14 +37,14 @@ const TICKET_PRIORITY_COLOR: Record<string, string> = {
 
 type TabId = 'units' | 'reservations' | 'maintenance' | 'channels';
 
-async function fetchPropertyDetail(id: string) {
+async function fetchPropertyDetail(id: string, tenantId: string) {
   const [propRes, channelListingsRes] = await Promise.all([
     supabase.from('properties')
       .select('id, name, property_type, address, city, country, status, description, amenities, owner_id, created_at, updated_at')
-      .eq('id', id).eq('tenant_id', TENANT_ID).single(),
+      .eq('id', id).eq('tenant_id', tenantId).single(),
     supabase.from('channel_listings')
       .select('id, channel_id, unit_id, status, title, listing_url, external_listing_id')
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null),
   ]);
 
@@ -59,7 +55,7 @@ async function fetchPropertyDetail(id: string) {
     supabase.from('owners').select('id, first_name, last_name, email, phone').eq('id', prop.owner_id).single(),
     supabase.from('units')
       .select('id, name, unit_type, bedrooms, bathrooms, max_guests, base_rate, cleaning_fee, status, floor, area_sqm')
-      .eq('property_id', id).eq('tenant_id', TENANT_ID).is('deleted_at', null)
+      .eq('property_id', id).eq('tenant_id', tenantId).is('deleted_at', null)
       .order('name'),
   ]);
 
@@ -71,16 +67,16 @@ async function fetchPropertyDetail(id: string) {
     unitIds.length > 0
       ? supabase.from('reservations')
           .select('id, unit_id, status, channel, check_in, check_out, guest_first_name, guest_last_name, total_amount, currency')
-          .in('unit_id', unitIds).eq('tenant_id', TENANT_ID).is('deleted_at', null)
+          .in('unit_id', unitIds).eq('tenant_id', tenantId).is('deleted_at', null)
           .not('check_in', 'is', null).order('check_in', { ascending: false }).limit(20)
       : { data: [] },
     unitIds.length > 0
       ? supabase.from('maintenance_tickets')
           .select('id, unit_id, title, category, priority, status, created_at')
-          .in('unit_id', unitIds).eq('tenant_id', TENANT_ID).is('deleted_at', null)
+          .in('unit_id', unitIds).eq('tenant_id', tenantId).is('deleted_at', null)
           .order('created_at', { ascending: false }).limit(15)
       : { data: [] },
-    supabase.from('channels').select('id, name, channel_type, status').eq('tenant_id', TENANT_ID).is('deleted_at', null),
+    supabase.from('channels').select('id, name, channel_type, status').eq('tenant_id', tenantId).is('deleted_at', null),
   ]);
 
   const reservations = resRes.data ?? [];
@@ -115,15 +111,17 @@ const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('units');
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['property-detail', id],
-    queryFn: () => fetchPropertyDetail(id!),
-    enabled: !!id,
+  const { data, isPending } = useQuery({
+    queryKey: ['property-detail', id, tenantId],
+    queryFn: () => fetchPropertyDetail(id!, tenantId),
+    enabled: !!id && !!tenantId,
     staleTime: 60_000,
   });
 
-  if (isLoading) return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
+  if (isPending) return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
 
   if (!data?.property) {
     return (

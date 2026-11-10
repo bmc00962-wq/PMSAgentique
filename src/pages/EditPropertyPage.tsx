@@ -5,18 +5,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, Building2, MapPin, Home, Save,
-  CheckCircle2, Loader2, ChevronDown, Users, Search,
-} from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, Chrome as Home, Save, CircleCheck as CheckCircle2, Loader as Loader2, ChevronDown, Users, Search } from 'lucide-react';
 import { MOROCCAN_CITIES_SORTED } from '@/constants/moroccanCities';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const propertySchema = z.object({
   name:          z.string().min(1, 'Nom requis').max(120),
@@ -74,37 +70,40 @@ const EditPropertyPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
   // Load property
-  const { data: property, isLoading: propLoading } = useQuery({
-    queryKey: ['property-edit', id],
+  const { data: property, isPending: propLoading } = useQuery({
+    queryKey: ['property-edit', id, tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && !!tenantId,
   });
 
   // Load owners for dropdown
   const { data: owners = [] } = useQuery({
-    queryKey: ['owners-list-edit', TENANT_ID],
+    queryKey: ['owners-list-edit', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('owners')
         .select('id, first_name, last_name, city')
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('last_name');
       if (error) throw error;
       return data ?? [];
     },
+    enabled: !!tenantId,
     staleTime: 60_000,
   });
 
@@ -146,11 +145,11 @@ const EditPropertyPage = () => {
           updated_at:    new Date().toISOString(),
         })
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID);
+        .eq('tenant_id', tenantId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['properties', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['property', id] });
       queryClient.invalidateQueries({ queryKey: ['property-edit', id] });
       toast.success('Propriété mise à jour ✓');

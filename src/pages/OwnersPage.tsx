@@ -6,9 +6,8 @@ import { Plus, Search, Users, UserCheck, Building2, SlidersHorizontal, Mail, Pho
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'Tous' },
@@ -22,11 +21,11 @@ const STATUS_COLOR: Record<string, string> = {
   pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
 };
 
-async function fetchOwners() {
+async function fetchOwners(tenantId: string) {
   const { data, error } = await supabase
     .from('owners')
     .select('id, first_name, last_name, email, phone, city, country, language, status, notes, created_at')
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -35,7 +34,7 @@ async function fetchOwners() {
   const { data: props } = await supabase
     .from('properties')
     .select('id, owner_id')
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null);
 
   const propCount: Record<string, number> = {};
@@ -51,9 +50,13 @@ const OwnersPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data: owners = [], isLoading } = useQuery({
-    queryKey: ['owners', TENANT_ID],
-    queryFn: fetchOwners,
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
+
+  const { data: owners = [], isPending } = useQuery({
+    queryKey: ['owners', tenantId],
+    queryFn: () => fetchOwners(tenantId),
+    enabled: !!tenantId,
     staleTime: 60_000,
   });
 
@@ -147,7 +150,7 @@ const OwnersPage = () => {
         </div>
 
         {/* Grid */}
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
