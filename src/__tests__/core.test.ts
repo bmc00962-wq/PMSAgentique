@@ -1,8 +1,9 @@
 
-// Unit tests — ADR-023 Vitest
+// Unit tests — ADR-023, Node.js built-in test runner
 // Tests: calcul taxes localisées, transitions machine d'état réservations, utilitaires
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it } from 'node:test';
+import { strict as assert } from 'node:assert';
 
 // ── Test 1: Calcul taxes localisées (NewReservationPage logic) ───────────────
 
@@ -31,9 +32,9 @@ describe('Calcul taxes localisées', () => {
       cleaningFee: 65,
       country: 'Canada',
     });
-    expect(result.baseRent).toBe(360);
-    expect(result.taxAmount).toBe(Math.round((360 + 65) * 0.18475 * 100) / 100);
-    expect(result.totalAmount).toBe(result.baseRent + 65 + result.taxAmount);
+    assert.equal(result.baseRent, 360);
+    assert.equal(result.taxAmount, Math.round((360 + 65) * 0.18475 * 100) / 100);
+    assert.equal(result.totalAmount, result.baseRent + 65 + result.taxAmount);
   });
 
   it('applique la taxe Maroc 10%', () => {
@@ -43,23 +44,23 @@ describe('Calcul taxes localisées', () => {
       cleaningFee: 50,
       country: 'Morocco',
     });
-    expect(result.baseRent).toBe(500);
-    expect(result.taxAmount).toBe(Math.round((500 + 50) * 0.10 * 100) / 100);
-    expect(result.taxAmount).toBe(55);
-    expect(result.totalAmount).toBe(605);
+    assert.equal(result.baseRent, 500);
+    assert.equal(result.taxAmount, Math.round((500 + 50) * 0.10 * 100) / 100);
+    assert.equal(result.taxAmount, 55);
+    assert.equal(result.totalAmount, 605);
   });
 
   it('retourne 0 pour 0 nuits', () => {
     const result = calculateTotalAmount({ baseRate: 100, nights: 0, cleaningFee: 50, country: 'Canada' });
-    expect(result.baseRent).toBe(0);
+    assert.equal(result.baseRent, 0);
   });
 
   it('calcule correctement pour une nuit unique', () => {
     const result = calculateTotalAmount({
       baseRate: 150, nights: 1, cleaningFee: 60, country: 'Canada',
     });
-    expect(result.baseRent).toBe(150);
-    expect(result.taxAmount).toBe(Math.round((150 + 60) * 0.18475 * 100) / 100);
+    assert.equal(result.baseRent, 150);
+    assert.equal(result.taxAmount, Math.round((150 + 60) * 0.18475 * 100) / 100);
   });
 });
 
@@ -81,37 +82,37 @@ function canTransition(from: string, to: string): boolean {
 
 describe('Machine d\'état réservation — ADR-010', () => {
   it('autorise inquiry → confirmed', () => {
-    expect(canTransition('inquiry', 'pending')).toBe(true);
-    expect(canTransition('pending', 'confirmed')).toBe(true);
+    assert.equal(canTransition('inquiry', 'pending'), true);
+    assert.equal(canTransition('pending', 'confirmed'), true);
   });
 
   it('autorise confirmed → checked_in → checked_out (cycle complet)', () => {
-    expect(canTransition('confirmed', 'checked_in')).toBe(true);
-    expect(canTransition('checked_in', 'checked_out')).toBe(true);
+    assert.equal(canTransition('confirmed', 'checked_in'), true);
+    assert.equal(canTransition('checked_in', 'checked_out'), true);
   });
 
   it('interdit checked_out → tout autre statut (terminal)', () => {
-    expect(canTransition('checked_out', 'confirmed')).toBe(false);
-    expect(canTransition('checked_out', 'cancelled')).toBe(false);
-    expect(canTransition('checked_out', 'checked_in')).toBe(false);
+    assert.equal(canTransition('checked_out', 'confirmed'), false);
+    assert.equal(canTransition('checked_out', 'cancelled'), false);
+    assert.equal(canTransition('checked_out', 'checked_in'), false);
   });
 
   it('interdit cancelled → tout autre statut (terminal)', () => {
-    expect(canTransition('cancelled', 'confirmed')).toBe(false);
-    expect(canTransition('cancelled', 'pending')).toBe(false);
+    assert.equal(canTransition('cancelled', 'confirmed'), false);
+    assert.equal(canTransition('cancelled', 'pending'), false);
   });
 
   it('autorise confirmed → cancelled', () => {
-    expect(canTransition('confirmed', 'cancelled')).toBe(true);
+    assert.equal(canTransition('confirmed', 'cancelled'), true);
   });
 
   it('autorise confirmed → no_show', () => {
-    expect(canTransition('confirmed', 'no_show')).toBe(true);
+    assert.equal(canTransition('confirmed', 'no_show'), true);
   });
 
   it('interdit checked_in → cancelled (nécessite approbation ADR-020)', () => {
     // checked_in ne peut pas passer directement à cancelled — doit passer par approval
-    expect(canTransition('checked_in', 'cancelled')).toBe(false);
+    assert.equal(canTransition('checked_in', 'cancelled'), false);
   });
 });
 
@@ -125,18 +126,18 @@ describe('Génération clé idempotence — ADR-010', () => {
   it('génère une clé déterministe pour les mêmes paramètres', () => {
     const k1 = generateIdempotencyKey('unit-1', '2025-06-01', '2025-06-05', 'user-1');
     const k2 = generateIdempotencyKey('unit-1', '2025-06-01', '2025-06-05', 'user-1');
-    expect(k1).toBe(k2);
+    assert.equal(k1, k2);
   });
 
   it('génère des clés différentes pour des unités différentes', () => {
     const k1 = generateIdempotencyKey('unit-1', '2025-06-01', '2025-06-05', 'user-1');
     const k2 = generateIdempotencyKey('unit-2', '2025-06-01', '2025-06-05', 'user-1');
-    expect(k1).not.toBe(k2);
+    assert.notEqual(k1, k2);
   });
 
   it('est en minuscules (normalisation)', () => {
     const k = generateIdempotencyKey('UNIT-1', '2025-06-01', '2025-06-05', 'USER-1');
-    expect(k).toBe('unit-1-2025-06-01-2025-06-05-user-1');
+    assert.equal(k, 'unit-1-2025-06-01-2025-06-05-user-1');
   });
 });
 
@@ -150,18 +151,18 @@ function calculateNights(checkIn: string, checkOut: string): number {
 
 describe('Calcul nombre de nuits', () => {
   it('calcule 5 nuits pour du 1er au 6 juin', () => {
-    expect(calculateNights('2025-06-01', '2025-06-06')).toBe(5);
+    assert.equal(calculateNights('2025-06-01', '2025-06-06'), 5);
   });
 
   it('calcule 1 nuit pour une nuitée simple', () => {
-    expect(calculateNights('2025-06-01', '2025-06-02')).toBe(1);
+    assert.equal(calculateNights('2025-06-01', '2025-06-02'), 1);
   });
 
   it('retourne 0 pour dates identiques', () => {
-    expect(calculateNights('2025-06-01', '2025-06-01')).toBe(0);
+    assert.equal(calculateNights('2025-06-01', '2025-06-01'), 0);
   });
 
   it('retourne négatif si checkout avant checkin', () => {
-    expect(calculateNights('2025-06-05', '2025-06-01')).toBeLessThan(0);
+    assert.ok(calculateNights('2025-06-05', '2025-06-01') < 0);
   });
 });
