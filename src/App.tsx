@@ -73,6 +73,7 @@ import AdminTenantDetailPage from "./pages/AdminTenantDetailPage";
 import PricingPage from "./pages/PricingPage";
 import TenantOnboardingPage from "./pages/TenantOnboardingPage";
 import TasksPage from "./pages/TasksPage";
+import PlatformAdminRoute from "./components/features/PlatformAdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -148,10 +149,10 @@ const App = () => (
           <Route path="/agents/:id" element={<ProtectedRoute><AgentDetailPage /></ProtectedRoute>} />
           {/* PROMPT 18 — Production & Déploiement */}
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/saas-admin" element={<ProtectedRoute requiredPermission="tenant.admin"><SaasAdminPage /></ProtectedRoute>} />
-          <Route path="/saas-admin/tenants" element={<ProtectedRoute requiredPermission="tenant.admin"><AdminTenantsPage /></ProtectedRoute>} />
-          <Route path="/saas-admin/tenants/:id" element={<ProtectedRoute requiredPermission="tenant.admin"><AdminTenantDetailPage /></ProtectedRoute>} />
-          <Route path="/saas-admin/users" element={<ProtectedRoute requiredPermission="tenant.admin"><AdminUsersPage /></ProtectedRoute>} />
+          <Route path="/saas-admin" element={<ProtectedRoute><PlatformAdminRoute><SaasAdminPage /></PlatformAdminRoute></ProtectedRoute>} />
+          <Route path="/saas-admin/tenants" element={<ProtectedRoute><PlatformAdminRoute><AdminTenantsPage /></PlatformAdminRoute></ProtectedRoute>} />
+          <Route path="/saas-admin/tenants/:id" element={<ProtectedRoute><PlatformAdminRoute><AdminTenantDetailPage /></PlatformAdminRoute></ProtectedRoute>} />
+          <Route path="/saas-admin/users" element={<ProtectedRoute><PlatformAdminRoute><AdminUsersPage /></PlatformAdminRoute></ProtectedRoute>} />
           {/* PROMPT 19 — Agent Orchestrator Architecture */}
           <Route path="/agents/orchestrator" element={<ProtectedRoute><AgentOrchestratorPage /></ProtectedRoute>} />
           {/* PROMPT 20 — Human Approval Engine */}

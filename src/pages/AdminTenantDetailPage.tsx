@@ -155,7 +155,7 @@ const AdminTenantDetailPage = () => {
 
   const deactivateMember = useMutation({
     mutationFn: async (membershipId: string) => {
-      const { error } = await supabase.from('tenant_memberships').update({ status: 'inactive' }).eq('id', membershipId);
+      const { error } = await supabase.from('tenant_memberships').update({ status: 'disabled' }).eq('id', membershipId);
       if (error) throw error;
     },
     onSuccess: () => {
