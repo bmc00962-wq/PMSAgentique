@@ -15,8 +15,8 @@ import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 // ── Immutable state machine (ADR-010) ────────────────────────────────────────
 const STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -69,20 +69,22 @@ const EditReservationPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
-  const { data: reservation, isLoading } = useQuery({
+  const { data: reservation, isPending } = useQuery({
     queryKey: ['reservation-edit', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('reservations')
         .select('id, status, version, guest_first_name, guest_last_name, check_in, check_out, internal_notes, channel, total_amount, currency')
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && !!tenantId,
     staleTime: 30_000,
   });
 
@@ -110,14 +112,14 @@ const EditReservationPage = () => {
           updated_at:     new Date().toISOString(),
         })
         .eq('id', id!)
-        .eq('tenant_id', TENANT_ID);
+        .eq('tenant_id', tenantId);
       if (updateErr) throw updateErr;
 
       // 2. INSERT reservation_status_history (append-only ADR-010)
       const { error: histErr } = await supabase
         .from('reservation_status_history')
         .insert({
-          tenant_id:      TENANT_ID,
+          tenant_id:      tenantId,
           reservation_id: id!,
           from_status:    oldStatus,
           to_status:      data.new_status,
@@ -127,7 +129,7 @@ const EditReservationPage = () => {
     },
     onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: ['reservation-detail', id] });
-      queryClient.invalidateQueries({ queryKey: ['reservations', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['reservations', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['reservation-edit', id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(`Statut mis à jour → ${STATUS_LABELS[data.new_status] ?? data.new_status}`);
@@ -136,7 +138,7 @@ const EditReservationPage = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading) {
+  if (isPending) {
     return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
   }
 

@@ -16,8 +16,8 @@ import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const TAX_QC = 0.18475;
 const TAX_MA = 0.10;
 
@@ -48,14 +48,14 @@ const CHANNEL_OPTIONS = [
   { value: 'manual',  label: 'Manuel' },
 ];
 
-async function fetchUnitsAndGuests() {
+async function fetchUnitsAndGuests(tenantId: string) {
   const [unitsRes, guestsRes] = await Promise.all([
     supabase.from('units')
       .select('id, name, base_rate, cleaning_fee, currency, max_guests, status, property_id')
-      .eq('tenant_id', TENANT_ID).eq('status', 'active').is('deleted_at', null).order('name'),
+      .eq('tenant_id', tenantId).eq('status', 'active').is('deleted_at', null).order('name'),
     supabase.from('guests')
       .select('id, first_name, last_name, email, phone')
-      .eq('tenant_id', TENANT_ID).is('deleted_at', null).order('last_name').limit(100),
+      .eq('tenant_id', tenantId).is('deleted_at', null).order('last_name').limit(100),
   ]);
 
   const units = unitsRes.data ?? [];
@@ -71,7 +71,7 @@ async function fetchUnitsAndGuests() {
   return { units, guests, propMap };
 }
 
-async function checkAvailability(unitId: string, checkIn: string, checkOut: string): Promise<{
+async function checkAvailability(tenantId: string, unitId: string, checkIn: string, checkOut: string): Promise<{
   available: boolean; conflictCount: number; message: string;
 }> {
   if (!unitId || !checkIn || !checkOut || checkIn >= checkOut) {
@@ -82,7 +82,7 @@ async function checkAvailability(unitId: string, checkIn: string, checkOut: stri
   const { data: blocks } = await supabase
     .from('calendar_blocks')
     .select('id, start_date, end_date, reason')
-    .eq('unit_id', unitId).eq('tenant_id', TENANT_ID)
+    .eq('unit_id', unitId).eq('tenant_id', tenantId)
     .lte('start_date', checkOut).gte('end_date', checkIn);
 
   if (blocks && blocks.length > 0) {
@@ -93,7 +93,7 @@ async function checkAvailability(unitId: string, checkIn: string, checkOut: stri
   const { data: conflicts } = await supabase
     .from('reservations')
     .select('id, status, guest_first_name, guest_last_name, check_in, check_out')
-    .eq('unit_id', unitId).eq('tenant_id', TENANT_ID).is('deleted_at', null)
+    .eq('unit_id', unitId).eq('tenant_id', tenantId).is('deleted_at', null)
     .not('status', 'in', '("cancelled","no_show")')
     .lt('check_in', checkOut).gt('check_out', checkIn);
 
@@ -127,13 +127,16 @@ function calcNights(checkIn: string, checkOut: string): number {
 const NewReservationPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
   const [existingGuestMode, setExistingGuestMode] = useState(false);
   const [availability, setAvailability] = useState<{ available: boolean; conflictCount: number; message: string } | null>(null);
   const [checkingAvail, setCheckingAvail] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['new-reservation-data', TENANT_ID],
-    queryFn: fetchUnitsAndGuests,
+  const { data, isPending } = useQuery({
+    queryKey: ['new-reservation-data', tenantId],
+    queryFn: () => fetchUnitsAndGuests(tenantId),
+    enabled: !!tenantId,
     staleTime: 60_000,
   });
 
@@ -166,11 +169,11 @@ const NewReservationPage = () => {
     let cancelled = false;
     setCheckingAvail(true);
     const timer = setTimeout(async () => {
-      const result = await checkAvailability(watchedUnitId, watchedCheckIn, watchedCheckOut);
+      const result = await checkAvailability(tenantId, watchedUnitId, watchedCheckIn, watchedCheckOut);
       if (!cancelled) { setAvailability(result); setCheckingAvail(false); }
     }, 600);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [watchedUnitId, watchedCheckIn, watchedCheckOut]);
+  }, [tenantId, watchedUnitId, watchedCheckIn, watchedCheckOut]);
 
   const handleGuestSelect = (guestId: string) => {
     const g = guests.find(g => g.id === guestId);
@@ -190,7 +193,7 @@ const NewReservationPage = () => {
       const idempotencyKey = `direct-${data.unit_id}-${data.check_in}-${data.check_out}-${Date.now()}`;
 
       const { data: res, error } = await supabase.from('reservations').insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         unit_id: data.unit_id,
         guest_id: data.guest_id || null,
         check_in: data.check_in,
@@ -207,20 +210,24 @@ const NewReservationPage = () => {
         tax_amount: finance.taxAmount,
         channel_commission: 0,
         total_amount: finance.total,
-        currency: selectedUnit?.currency ?? 'CAD',
+        currency: selectedUnit?.currency ?? 'EUR',
         internal_notes: data.internal_notes || null,
         idempotency_key: idempotencyKey,
       }).select('id').single();
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.code === '23P01'
+          ? "Cette unité n'est plus disponible pour ces dates."
+          : "La réservation n'a pas pu être enregistrée. Réessayez.");
+      }
 
       // Append ledger entry (ADR-015 append-only)
       await supabase.from('ledger_entries').insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         reservation_id: res.id,
         entry_type: 'reservation_created',
         direction: 'credit',
         amount: finance.total,
-        currency: selectedUnit?.currency ?? 'CAD',
+        currency: selectedUnit?.currency ?? 'EUR',
         description: `Réservation ${data.guest_first_name} ${data.guest_last_name} · ${data.check_in} → ${data.check_out}`,
         reference_id: idempotencyKey,
       });
@@ -228,8 +235,8 @@ const NewReservationPage = () => {
       return res;
     },
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['reservations', TENANT_ID] });
-      queryClient.invalidateQueries({ queryKey: ['calendar', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['reservations', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['calendar', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Réservation créée avec succès ✓');
       navigate(`/reservations/${res.id}`);
@@ -259,7 +266,7 @@ const NewReservationPage = () => {
           </p>
         </div>
 
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
         ) : (
           <form onSubmit={handleSubmit(d => createReservation.mutate(d))} className="space-y-6">
@@ -446,12 +453,12 @@ const NewReservationPage = () => {
                   ].map(({ label, value }) => (
                     <div key={label} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
                       <span className="text-muted-foreground text-xs">{label}</span>
-                      <span className="text-foreground font-medium tabular-nums">{value.toFixed(2)} {selectedUnit?.currency ?? 'CAD'}</span>
+                      <span className="text-foreground font-medium tabular-nums">{value.toFixed(2)} {selectedUnit?.currency ?? 'EUR'}</span>
                     </div>
                   ))}
                   <div className="flex items-center justify-between pt-2">
                     <span className="font-semibold text-foreground">Total</span>
-                    <span className="text-xl font-bold font-mono text-emerald-400">{finance.total.toFixed(2)} {selectedUnit?.currency ?? 'CAD'}</span>
+                    <span className="text-xl font-bold font-mono text-emerald-400">{finance.total.toFixed(2)} {selectedUnit?.currency ?? 'EUR'}</span>
                   </div>
                 </div>
 

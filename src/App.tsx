@@ -72,6 +72,7 @@ import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminTenantDetailPage from "./pages/AdminTenantDetailPage";
 import PricingPage from "./pages/PricingPage";
 import TenantOnboardingPage from "./pages/TenantOnboardingPage";
+import TasksPage from "./pages/TasksPage";
 
 const queryClient = new QueryClient();
 
@@ -132,6 +133,7 @@ const App = () => (
           <Route path="/maintenance" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
           <Route path="/maintenance/new" element={<ProtectedRoute><NewMaintenancePage /></ProtectedRoute>} />
           <Route path="/maintenance/:id" element={<ProtectedRoute><MaintenanceDetailPage /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
           {/* PROMPT 15 — Finance Engine */}
           <Route path="/finance" element={<ProtectedRoute requiredPermission="finance.read"><FinancePage /></ProtectedRoute>} />
           <Route path="/finance/ledger" element={<ProtectedRoute><FinanceLedgerPage /></ProtectedRoute>} />

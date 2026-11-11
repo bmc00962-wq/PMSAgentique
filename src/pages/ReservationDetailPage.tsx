@@ -7,8 +7,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const STATUS_LABELS: Record<string, string> = {
   inquiry: 'Demande', pending: 'En attente', confirmed: 'Confirmée',
@@ -29,12 +29,12 @@ const CHANNEL_LABELS: Record<string, string> = {
   airbnb: 'Airbnb', booking: 'Booking.com', vrbo: 'Vrbo', direct: 'Direct', manual: 'Manuel',
 };
 
-async function fetchReservationDetail(id: string) {
+async function fetchReservationDetail(tenantId: string, id: string) {
   const { data: r, error } = await supabase
     .from('reservations')
     .select('*')
     .eq('id', id)
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .single();
   if (error) throw error;
 
@@ -88,11 +88,13 @@ const ReservationDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ['reservation-detail', id],
-    queryFn: () => fetchReservationDetail(id!),
-    enabled: !!id,
+    queryFn: () => fetchReservationDetail(tenantId, id!),
+    enabled: !!id && !!tenantId,
     staleTime: 30_000,
   });
 
@@ -107,7 +109,7 @@ const ReservationDetailPage = () => {
       if (error) throw error;
       // Append status history
       await supabase.from('reservation_status_history').insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         reservation_id: id!,
         from_status: old,
         to_status: newStatus,
@@ -116,13 +118,13 @@ const ReservationDetailPage = () => {
     },
     onSuccess: (_, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['reservation-detail', id] });
-      queryClient.invalidateQueries({ queryKey: ['reservations', TENANT_ID] });
+      queryClient.invalidateQueries({ queryKey: ['reservations', tenantId] });
       toast.success(`Statut mis à jour → ${STATUS_LABELS[newStatus] ?? newStatus}`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading) return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
+  if (isPending) return <AppLayout><div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div></AppLayout>;
 
   if (!data?.reservation) {
     return (

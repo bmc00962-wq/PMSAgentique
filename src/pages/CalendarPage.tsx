@@ -7,8 +7,8 @@ import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 const STATUS_COLOR: Record<string, string> = {
   available: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400',
@@ -37,35 +37,29 @@ function formatDate(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-async function fetchCalendarData(year: number, month: number) {
+async function fetchCalendarData(tenantId: string, year: number, month: number) {
   const startDate = formatDate(year, month, 1);
   const endDate = formatDate(year, month, getDaysInMonth(year, month));
 
-  const [unitsRes, reservationsRes, blocksRes, availRes] = await Promise.all([
-    supabase.from('units').select('id, name, property_id, base_rate, status').eq('tenant_id', TENANT_ID).is('deleted_at', null).eq('status', 'active'),
+  const [unitsRes, reservationsRes, blocksRes] = await Promise.all([
+    supabase.from('units').select('id, name, property_id, base_rate, status').eq('tenant_id', tenantId).is('deleted_at', null).eq('status', 'active'),
     supabase.from('reservations')
       .select('id, unit_id, check_in, check_out, status, channel, guest_first_name, guest_last_name, nights, total_amount, currency')
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .not('check_in', 'is', null)
       .lte('check_in', endDate)
       .gte('check_out', startDate),
     supabase.from('calendar_blocks')
-      .select('id, unit_id, start_date, end_date, reason, note')
-      .eq('tenant_id', TENANT_ID)
+      .select('id, unit_id, start_date, end_date, reason, notes')
+      .eq('tenant_id', tenantId)
       .lte('start_date', endDate)
       .gte('end_date', startDate),
-    supabase.from('calendar_availability')
-      .select('unit_id, date, status, base_rate')
-      .eq('tenant_id', TENANT_ID)
-      .gte('date', startDate)
-      .lte('date', endDate),
   ]);
 
   const units = unitsRes.data ?? [];
   const reservations = reservationsRes.data ?? [];
   const blocks = blocksRes.data ?? [];
-  const avail = availRes.data ?? [];
 
   // Property names
   const propIds = [...new Set(units.map(u => u.property_id))];
@@ -73,13 +67,7 @@ async function fetchCalendarData(year: number, month: number) {
   const propMap: Record<string, string> = {};
   for (const p of props ?? []) propMap[p.id] = p.name;
 
-  // Build availability map
   const availMap: Record<string, Record<string, string>> = {};
-  for (const a of avail) {
-    if (!availMap[a.unit_id]) availMap[a.unit_id] = {};
-    availMap[a.unit_id][a.date] = a.status;
-  }
-  // Override with reservations
   for (const r of reservations) {
     if (!r.check_in || !r.check_out) continue;
     if (!availMap[r.unit_id]) availMap[r.unit_id] = {};
@@ -106,32 +94,37 @@ async function fetchCalendarData(year: number, month: number) {
 
 const CalendarPage = () => {
   const queryClient = useQueryClient();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [propertyFilter, setPropertyFilter] = useState('all');
   const [selectedCell, setSelectedCell] = useState<{ unitId: string; date: string } | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['calendar', TENANT_ID, year, month],
-    queryFn: () => fetchCalendarData(year, month),
+  const { data, isPending } = useQuery({
+    queryKey: ['calendar', tenantId, year, month],
+    queryFn: () => fetchCalendarData(tenantId, year, month),
+    enabled: !!tenantId,
     staleTime: 30_000,
   });
 
   const blockMutation = useMutation({
     mutationFn: async ({ unitId, date }: { unitId: string; date: string }) => {
+      const nextDay = new Date(`${date}T00:00:00Z`);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
       const { error } = await supabase.from('calendar_blocks').insert({
-        tenant_id: TENANT_ID,
+        tenant_id: tenantId,
         unit_id: unitId,
         start_date: date,
-        end_date: date,
-        reason: 'owner_block',
-        note: 'Blocage manuel',
+        end_date: nextDay.toISOString().slice(0, 10),
+        reason: 'other',
+        notes: 'Blocage manuel',
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendar', TENANT_ID, year, month] });
+      queryClient.invalidateQueries({ queryKey: ['calendar', tenantId, year, month] });
       toast.success('Jour bloqué');
       setSelectedCell(null);
     },
@@ -254,7 +247,7 @@ const CalendarPage = () => {
         </div>
 
         {/* Grid */}
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
         ) : units.length === 0 ? (
           <div className="text-center py-16 bg-card border border-dashed border-border rounded-xl">

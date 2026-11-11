@@ -10,8 +10,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import LoadingSpinner from '@/components/features/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const PAGE_SIZE = 20;
 
 const STATUS_LABELS: Record<string, string> = {
@@ -38,6 +38,7 @@ const ALL_STATUSES = ['inquiry','pending','confirmed','checked_in','checked_out'
 const ALL_CHANNELS = ['airbnb','booking','vrbo','direct','manual'];
 
 async function fetchReservationsPage(
+  tenantId: string,
   page: number,
   status: string,
   channel: string,
@@ -46,7 +47,7 @@ async function fetchReservationsPage(
   let query = supabase
     .from('reservations')
     .select('id, status, channel, check_in, check_out, guests_count, total_amount, currency, guest_first_name, guest_last_name, guest_email, created_at', { count: 'exact' })
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null);
 
   if (status !== 'all') query = query.eq('status', status);
@@ -66,11 +67,11 @@ async function fetchReservationsPage(
   return { data: data ?? [], total: count ?? 0 };
 }
 
-async function fetchReservationStats() {
+async function fetchReservationStats(tenantId: string) {
   const { data } = await supabase
     .from('reservations')
     .select('status')
-    .eq('tenant_id', TENANT_ID)
+    .eq('tenant_id', tenantId)
     .is('deleted_at', null);
 
   const arr = data ?? [];
@@ -84,6 +85,8 @@ async function fetchReservationStats() {
 
 const ReservationsPage = () => {
   const navigate = useNavigate();
+  const { membership } = useAuth();
+  const tenantId = membership?.tenant_id ?? '';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatus] = useState('all');
   const [channelFilter, setChannel] = useState('all');
@@ -94,16 +97,18 @@ const ReservationsPage = () => {
   const handleChannel = (v: string) => { setChannel(v); setPage(0); };
   const handleSearch = (v: string) => { setSearch(v); setPage(0); };
 
-  const { data: pageData, isLoading } = useQuery({
-    queryKey: ['reservations', TENANT_ID, page, statusFilter, channelFilter, search],
-    queryFn: () => fetchReservationsPage(page, statusFilter, channelFilter, search),
+  const { data: pageData, isPending } = useQuery({
+    queryKey: ['reservations', tenantId, page, statusFilter, channelFilter, search],
+    queryFn: () => fetchReservationsPage(tenantId, page, statusFilter, channelFilter, search),
+    enabled: !!tenantId,
     staleTime: 30_000,
     placeholderData: prev => prev,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['reservations-stats', TENANT_ID],
-    queryFn: fetchReservationStats,
+    queryKey: ['reservations-stats', tenantId],
+    queryFn: () => fetchReservationStats(tenantId),
+    enabled: !!tenantId,
     staleTime: 60_000,
   });
 
@@ -116,7 +121,7 @@ const ReservationsPage = () => {
     const { data } = await supabase
       .from('reservations')
       .select('guest_first_name,guest_last_name,guest_email,status,channel,check_in,check_out,guests_count,total_amount,currency')
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -213,7 +218,7 @@ const ReservationsPage = () => {
         </div>
 
         {/* Results */}
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
         ) : reservations.length === 0 ? (
           <div className="bg-card border border-border rounded-xl p-12 text-center">
