@@ -61,7 +61,7 @@ const FinanceStatementsPage = () => {
       .from('owner_statements')
       .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq('id', stmtId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { console.error('[FinanceStatements]:', error.message); toast.error("Impossible d'enregistrer le relev\u00e9."); return; }
     toast.success('Relevé marqué comme envoyé ✓');
     queryClient.invalidateQueries({ queryKey: ['owner-statements', TENANT_ID] });
   };

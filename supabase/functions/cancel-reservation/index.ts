@@ -64,8 +64,27 @@ serve(async (req) => {
     }
     const tenantId = membership.tenant_id;
 
+    // F7: cancelling a booking is a privileged action, not a member action.
+    const CANCEL_ROLES = ["owner", "admin", "manager"];
+    if (!CANCEL_ROLES.includes(membership.role)) {
+      return new Response(
+        JSON.stringify({ error: "Votre rôle ne permet pas d'annuler une réservation" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Parse payload ─────────────────────────────────────────────────────────
-    const { reservation_id, reason, refund_amount = 0, requires_approval = false }: CancelReservationPayload = await req.json();
+    const { reservation_id, reason, refund_amount: rawRefund = 0, requires_approval = false }: CancelReservationPayload = await req.json();
+
+    // F6: the refund is a value-carrying quantity supplied by the browser.
+    const refundNumber = Number(rawRefund);
+    if (!Number.isFinite(refundNumber) || refundNumber < 0) {
+      return new Response(
+        JSON.stringify({ error: "Montant de remboursement invalide" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    let refund_amount = Math.round(refundNumber * 100) / 100;
 
     if (!reservation_id || !reason) {
       return new Response(
@@ -105,10 +124,21 @@ serve(async (req) => {
       );
     }
 
+    // F6: a refund can never exceed what was actually charged.
+    const reservationTotal = Number(reservation.total_amount) || 0;
+    if (refund_amount > reservationTotal) {
+      return new Response(
+        JSON.stringify({ error: "Le remboursement ne peut pas dépasser le montant de la réservation" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Check if approval required ────────────────────────────────────────────
+    // F6: the gate keys on the refund itself, not only on the reservation total.
     const needsApproval = requires_approval ||
       (reservation.status === "checked_in") ||
-      (Number(reservation.total_amount) > 1000 && refund_amount > 0);
+      (refund_amount > 500) ||
+      (reservationTotal > 1000 && refund_amount > 0);
 
     if (needsApproval) {
       // Create approval_request instead of immediate cancellation
@@ -143,7 +173,7 @@ serve(async (req) => {
       if (approvalError) {
         console.error("[cancel-reservation] Approval insert error:", approvalError);
         return new Response(
-          JSON.stringify({ error: `Supabase: ${approvalError.message}` }),
+          JSON.stringify({ error: "Impossible de soumettre la demande d'approbation." }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -185,7 +215,7 @@ serve(async (req) => {
 
     if (updateError) {
       return new Response(
-        JSON.stringify({ error: `Supabase: ${updateError.message}` }),
+        JSON.stringify({ error: "Impossible d'annuler la réservation." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -250,7 +280,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("[cancel-reservation] Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: `Erreur interne: ${err instanceof Error ? err.message : String(err)}` }),
+      JSON.stringify({ error: "Erreur interne. Veuillez réessayer." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

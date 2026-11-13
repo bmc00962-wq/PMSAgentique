@@ -106,7 +106,7 @@ const ProfilePage = () => {
       options: { shouldCreateUser: false },
     });
     if (error) {
-      toast.error(error.message);
+      console.error('[Profile]:', error.message); toast.error("Impossible de mettre \u00e0 jour votre profil.");
     } else {
       setOtpSent(true);
       toast.success(`Code envoyé à ${user.email}`);

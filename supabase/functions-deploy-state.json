@@ -1,0 +1,25 @@
+{
+  "projectId": "72821621",
+  "functions": {
+    "can-user-perform": {
+      "hasChanged": false,
+      "hash": "3e770fd611d61e5f2c400653de82fedb06b5feba2cbbd0da7f6429e08c34669c"
+    },
+    "cancel-reservation": {
+      "hasChanged": false,
+      "hash": "48cfa38b6531dd4f7316dcc32db00641de5d8f1152f9e3ed34bef538e6e161053f52eabe77c14130553de605afa6f6c485fe46391b7f8c820b956713c2f33157"
+    },
+    "create-reservation": {
+      "hasChanged": false,
+      "hash": "e8e74fe8b0234874fd9f5b9a01ff33acc7a3d3d3cb7ce6b4a28a5989bb6ed74b3f52eabe77c14130553de605afa6f6c485fe46391b7f8c820b956713c2f33157"
+    },
+    "export-migration": {
+      "hasChanged": false,
+      "hash": "e5b862ebf01dd82330e35f05c0fcbc2b54d2495acb5bbefab2a6f595e10d76d63f52eabe77c14130553de605afa6f6c485fe46391b7f8c820b956713c2f33157"
+    },
+    "send-message": {
+      "hasChanged": false,
+      "hash": "715e55fc1e45e8b93eac495ca27ba3a71f8fb140ebd8f0a55fead4fabe51ec243f52eabe77c14130553de605afa6f6c485fe46391b7f8c820b956713c2f33157"
+    }
+  }
+}

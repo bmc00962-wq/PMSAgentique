@@ -80,6 +80,15 @@ serve(async (req) => {
 
     const tenantId = membership.tenant_id;
 
+    // F7: being a member is not the same as being allowed to book.
+    const BOOKING_ROLES = ["owner", "admin", "manager"];
+    if (!BOOKING_ROLES.includes(membership.role)) {
+      return new Response(
+        JSON.stringify({ error: "Votre rôle ne permet pas de créer une réservation" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Parse payload ────────────────────────────────────────────────────────
     const payload: CreateReservationPayload = await req.json();
     const {
@@ -88,6 +97,32 @@ serve(async (req) => {
       currency = "CAD", guest_first_name, guest_last_name, guest_email, guest_phone,
       internal_notes,
     } = payload;
+
+    // F8: money comes from the browser — validate each part and recompute the total.
+    const MAX_AMOUNT = 1_000_000;
+    const money = (v: unknown): number | null => {
+      const n = Number(v ?? 0);
+      if (!Number.isFinite(n) || n < 0 || n > MAX_AMOUNT) return null;
+      return Math.round(n * 100) / 100;
+    };
+    const safeBaseRent = money(base_rent);
+    const safeCleaningFee = money(cleaning_fee);
+    const safeTaxAmount = money(tax_amount);
+    if (safeBaseRent === null || safeCleaningFee === null || safeTaxAmount === null) {
+      return new Response(
+        JSON.stringify({ error: "Montants invalides" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const safeTotalAmount = Math.round((safeBaseRent + safeCleaningFee + safeTaxAmount) * 100) / 100;
+
+    const safeGuestsCount = Number(guests_count);
+    if (!Number.isInteger(safeGuestsCount) || safeGuestsCount < 1 || safeGuestsCount > 50) {
+      return new Response(
+        JSON.stringify({ error: "Nombre de voyageurs invalide" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Generate idempotency key if not provided
     const idempotencyKey = payload.idempotency_key
@@ -201,14 +236,14 @@ serve(async (req) => {
         guest_id:         guest_id || null,
         check_in,
         check_out,
-        guests_count,
+        guests_count:     safeGuestsCount,
         status:           "confirmed",
         channel,
-        base_rent:        base_rent ?? 0,
-        cleaning_fee:     cleaning_fee ?? 0,
-        tax_amount:       tax_amount ?? 0,
+        base_rent:        safeBaseRent,
+        cleaning_fee:     safeCleaningFee,
+        tax_amount:       safeTaxAmount,
         channel_commission: 0,
-        total_amount:     total_amount ?? 0,
+        total_amount:     safeTotalAmount,
         currency,
         guest_first_name: guest_first_name || null,
         guest_last_name:  guest_last_name || null,
@@ -238,7 +273,7 @@ serve(async (req) => {
         }
       }
       return new Response(
-        JSON.stringify({ error: `Supabase: ${insertError.message}` }),
+        JSON.stringify({ error: "Impossible de créer la réservation." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -254,7 +289,7 @@ serve(async (req) => {
         reservation_id: reservationId,
         entry_type:   "base_rent",
         direction:    "credit",
-        amount:       total_amount ?? 0,
+        amount:       safeTotalAmount,
         currency,
         description:  `Réservation ${check_in} → ${check_out} · ${guest_first_name ?? ''} ${guest_last_name ?? ''}`.trim(),
         created_by:   user.id,
@@ -287,7 +322,7 @@ serve(async (req) => {
         date:           current.toISOString().slice(0, 10),
         status:         "booked",
         reservation_id: reservationId,
-        base_rate:      base_rent / nightsCount,
+        base_rate:      nightsCount > 0 ? safeBaseRent / nightsCount : 0,
         min_stay:       1,
       });
       current.setDate(current.getDate() + 1);
@@ -309,7 +344,7 @@ serve(async (req) => {
         action:      "reservation.created",
         entity_type: "reservation",
         entity_id:   reservationId,
-        new_data:    { unit_id, check_in, check_out, channel, total_amount, currency },
+        new_data:    { unit_id, check_in, check_out, channel, total_amount: safeTotalAmount, currency },
       });
 
     return new Response(
@@ -317,7 +352,7 @@ serve(async (req) => {
         success: true,
         reservation_id: reservationId,
         nights: nightsCount,
-        total_amount,
+        total_amount: safeTotalAmount,
         currency,
         message: `Réservation confirmée — ${nightsCount} nuit${nightsCount > 1 ? 's' : ''} du ${check_in} au ${check_out}`,
       }),
@@ -327,7 +362,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("[create-reservation] Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: `Erreur interne: ${err instanceof Error ? err.message : String(err)}` }),
+      JSON.stringify({ error: "Erreur interne. Veuillez réessayer." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

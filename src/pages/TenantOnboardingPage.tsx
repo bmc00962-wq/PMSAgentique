@@ -139,7 +139,7 @@ const TenantOnboardingPage = () => {
       .eq('id', tenantId);
     setSavingDomain(false);
     if (error) {
-      toast.error(error.message.includes('unique') ? 'Ce domaine est déjà utilisé par un autre compte.' : error.message);
+      console.error('[Onboarding]:', error.message); toast.error(error.message.includes('unique') ? 'Ce domaine est déjà utilisé par un autre compte.' : "Impossible d'enregistrer ces informations.");
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['onboarding-tenant'] });

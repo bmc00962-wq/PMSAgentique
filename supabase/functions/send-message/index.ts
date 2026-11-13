@@ -67,6 +67,15 @@ serve(async (req) => {
     }
     const tenantId = membership.tenant_id;
 
+    // F7: guest-facing messaging is restricted to staff-level roles and above.
+    const MESSAGING_ROLES = ["owner", "admin", "manager", "staff"];
+    if (!MESSAGING_ROLES.includes(membership.role)) {
+      return new Response(
+        JSON.stringify({ error: "Votre rôle ne permet pas d'envoyer de message" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ── Parse payload ─────────────────────────────────────────────────────────
     const payload: SendMessagePayload = await req.json();
     const {
@@ -84,7 +93,37 @@ serve(async (req) => {
     // ── Resolve or create conversation ────────────────────────────────────────
     let convId = conversation_id;
 
+    // F3: a caller-supplied conversation id must belong to the caller's tenant.
+    if (convId) {
+      const { data: ownConv } = await supabaseAdmin
+        .from("conversations")
+        .select("id")
+        .eq("id", convId)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      if (!ownConv) {
+        return new Response(
+          JSON.stringify({ error: "Conversation introuvable" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     if (!convId && guest_id) {
+      // F9: the guest must belong to the caller's tenant before anything is linked to it.
+      const { data: ownGuest } = await supabaseAdmin
+        .from("guests")
+        .select("id")
+        .eq("id", guest_id)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      if (!ownGuest) {
+        return new Response(
+          JSON.stringify({ error: "Voyageur introuvable" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // Check existing open conversation for this guest
       const { data: existingConv } = await supabaseAdmin
         .from("conversations")
@@ -116,7 +155,7 @@ serve(async (req) => {
 
         if (convError) {
           return new Response(
-            JSON.stringify({ error: `Supabase: ${convError.message}` }),
+            JSON.stringify({ error: "Impossible de créer la conversation." }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -148,7 +187,8 @@ serve(async (req) => {
         .from("reservations")
         .select("guest_first_name, guest_last_name, check_in, check_out, nights, total_amount, currency, channel, unit_id")
         .eq("id", reservation_id)
-        .single();
+        .eq("tenant_id", tenantId)   // F2: never read a reservation outside the caller's tenant
+        .maybeSingle();
 
       if (res) {
         contextData = {
@@ -244,7 +284,7 @@ serve(async (req) => {
     if (msgError) {
       console.error("[send-message] Message insert error:", msgError);
       return new Response(
-        JSON.stringify({ error: `Supabase: ${msgError.message}` }),
+        JSON.stringify({ error: "Impossible d'enregistrer le message." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -294,7 +334,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("[send-message] Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: `Erreur interne: ${err instanceof Error ? err.message : String(err)}` }),
+      JSON.stringify({ error: "Erreur interne. Veuillez réessayer." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

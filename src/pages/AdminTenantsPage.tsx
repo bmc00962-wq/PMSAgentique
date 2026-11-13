@@ -184,7 +184,7 @@ const TenantFormModal = ({ initial, onClose, onSaved }: TenantFormProps) => {
       ({ error } = await supabase.from('tenants').insert({ ...payload, slug }));
     }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { console.error('[AdminTenants] save:', error.message); toast.error("Impossible d'enregistrer ce tenant."); return; }
     toast.success(isEdit ? 'Tenant mis à jour' : 'Tenant créé avec succès');
     onSaved();
     onClose();
@@ -341,7 +341,7 @@ const AdminTenantsPage = () => {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from('tenants').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await supabase.rpc('admin_set_tenant_status', { p_tenant: id, p_status: status });
       if (error) throw error;
     },
     onSuccess: (_, { status }) => {

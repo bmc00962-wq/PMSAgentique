@@ -120,7 +120,7 @@ const AdminTenantDetailPage = () => {
 
   const updateTenantStatus = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await supabase.from('tenants').update({ status, updated_at: new Date().toISOString() }).eq('id', id!);
+      const { error } = await supabase.rpc('admin_set_tenant_status', { p_tenant: id!, p_status: status });
       if (error) throw error;
     },
     onSuccess: (_, status) => {
@@ -131,7 +131,7 @@ const AdminTenantDetailPage = () => {
 
   const updatePlan = useMutation({
     mutationFn: async (plan_id: string) => {
-      const { error } = await supabase.from('tenants').update({ plan_id, updated_at: new Date().toISOString() }).eq('id', id!);
+      const { error } = await supabase.rpc('admin_set_tenant_plan', { p_tenant: id!, p_plan: plan_id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -181,10 +181,10 @@ const AdminTenantDetailPage = () => {
     if (existing) {
       // Reactivate + update role
       const { error } = await supabase.from('tenant_memberships').update({ role: newMemberRole, status: 'active' }).eq('id', existing.id);
-      if (error) { toast.error(error.message); setAddingMember(false); return; }
+      if (error) { console.error('[AdminTenantDetail] member:', error.message); toast.error("Impossible d'enregistrer ce membre."); setAddingMember(false); return; }
     } else {
       const { error } = await supabase.from('tenant_memberships').insert({ tenant_id: id!, user_id: profile.id, role: newMemberRole, status: 'active' });
-      if (error) { toast.error(error.message); setAddingMember(false); return; }
+      if (error) { console.error('[AdminTenantDetail] member:', error.message); toast.error("Impossible d'enregistrer ce membre."); setAddingMember(false); return; }
     }
     setAddingMember(false);
     setShowAddMember(false);

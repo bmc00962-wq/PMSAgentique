@@ -124,7 +124,7 @@ const ChangeRoleModal = ({ membership, onClose, onSaved }: ChangeRoleModalProps)
       .update({ role: newRole, updated_at: new Date().toISOString() })
       .eq('id', membership.id);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { console.error('[AdminUsers]:', error.message); toast.error("Impossible d'enregistrer cette modification."); return; }
     toast.success(`Rôle mis à jour → ${ROLE_LABELS[newRole as SystemRole] ?? newRole}`);
     onSaved();
     onClose();
@@ -240,7 +240,7 @@ const AddMembershipModal = ({ userId, userEmail, existingTenantIds, onClose, onS
       status: 'active',
     });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { console.error('[AdminUsers]:', error.message); toast.error("Impossible d'enregistrer cette modification."); return; }
     toast.success('Membership ajouté avec succès');
     onSaved();
     onClose();

@@ -1,0 +1,14 @@
+[functions.can-user-perform]
+verify_jwt = true
+
+[functions.create-reservation]
+verify_jwt = true
+
+[functions.cancel-reservation]
+verify_jwt = true
+
+[functions.send-message]
+verify_jwt = true
+
+[functions.export-migration]
+verify_jwt = true
